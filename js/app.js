@@ -9,13 +9,19 @@ function toast(msg,isErr=false) {
       document.body.appendChild(_toastEl);
     }
     _toastEl.textContent=msg;
+    var cs=getComputedStyle(document.documentElement);
+    var hud=cs.getPropertyValue('--hud').trim()||'#39ff14';
+    var surface=cs.getPropertyValue('--surface2').trim()||'#121812';
+    var border=cs.getPropertyValue('--border').trim()||'#1a2a1a';
+    var text=cs.getPropertyValue('--text').trim()||'#b8d4b0';
+    var red=cs.getPropertyValue('--red').trim()||'#cc1e1e';
     Object.assign(_toastEl.style,{
       position:'fixed', bottom:'24px', right:'24px',
       zIndex:'2147483647', display:'block',
-      background:'#0d1a0c', border:'1px solid #1a5c0a',
-      borderLeft:'4px solid '+(isErr?'#cc1e1e':'#39ff14'),
+      background:surface, border:'1px solid '+border,
+      borderLeft:'4px solid '+(isErr?red:hud),
       padding:'12px 18px', fontFamily:'monospace', fontSize:'13px',
-      color:'#c8e8c0', maxWidth:'360px', borderRadius:'2px',
+      color:text, maxWidth:'360px', borderRadius:'2px',
       boxShadow:'0 4px 24px rgba(0,0,0,0.9)', pointerEvents:'none',
     });
     clearTimeout(_toastTimer);
