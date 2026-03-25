@@ -2,12 +2,14 @@
 /** @type {{ loadData:()=>Promise<any>, saveData:(d:any)=>Promise<any>, openReleasePage:(url:string)=>void, onUpdateStatus:(cb:(info:{version:string,url:string})=>void)=>void }} */
 const electronAPI = /** @type {any} */(window).electronAPI;
 // ─── TOAST ─────────────────────────────────────────────
+let _toastTimer=null;
 function toast(msg,isErr=false) {
   const el=document.getElementById('toast');
   el.textContent=msg;
   el.style.borderLeftColor=isErr?'var(--red)':'var(--green)';
   el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'),2800);
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>el.classList.remove('show'),2800);
 }
 
 // No demo seed data

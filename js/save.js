@@ -10,8 +10,9 @@ function saveCustomer() {
     address:document.getElementById('cust-address').value,
     notes:document.getElementById('cust-notes').value,
     createdAt:new Date().toISOString()};
+  const isEditing=!!editingId.customer;
   upsert('customers',item); closeModal('customer'); renderAll();
-  toast(editingId.customer?'Customer updated':'Customer added');
+  toast(isEditing?'Customer updated':'Customer added');
 }
 
 function saveVehicle() {
@@ -27,8 +28,9 @@ function saveVehicle() {
     mileage:document.getElementById('veh-mileage').value,
     ownerId:document.getElementById('veh-owner').value,
     notes:document.getElementById('veh-notes').value};
+  const isEditing=!!editingId.vehicle;
   upsert('vehicles',item); closeModal('vehicle'); renderAll();
-  toast(editingId.vehicle?'Vehicle updated':'Vehicle added');
+  toast(isEditing?'Vehicle updated':'Vehicle added');
 }
 
 
@@ -187,8 +189,9 @@ function saveWorkorder() {
       ? (wos.find(x=>x.id===editingId.workorder)?.createdAt || new Date().toISOString())
       : new Date().toISOString()
   };
+  const isEditing=!!editingId.workorder;
   upsert('workorders', item); closeModal('workorder'); renderAll();
-  toast(editingId.workorder ? 'Work order updated' : 'Work order #'+item.number+' created');
+  toast(isEditing ? 'Work order updated' : 'Work order #'+item.number+' created');
 }
 
 function saveInvoice() {
@@ -218,8 +221,9 @@ function saveInvoice() {
     date:   document.getElementById('inv-date').value,
     notes:  document.getElementById('inv-notes').value
   };
+  const isEditing=!!editingId.invoice;
   upsert('invoices', item); closeModal('invoice'); renderAll();
-  toast(editingId.invoice ? 'Invoice updated' : 'Invoice #' + item.number + ' created');
+  toast(isEditing ? 'Invoice updated' : 'Invoice #' + item.number + ' created');
 }
 
 
