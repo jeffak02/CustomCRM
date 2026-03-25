@@ -1,17 +1,14 @@
-version: 1.0.0
+version: 1.0.1
 files:
-  - url: GeistWerks-1.0.0-arm64-mac.zip
-    sha512: 0qQ6ugLTCFJXIxfOh/w1U3EPPr/c2bZD0HlbW//6mlxuQ2BspUXKeP1cdkhBqlEYpD3SOfNG3dptrpbHhLy0Yg==
-    size: 95657445
-  - url: GeistWerks-1.0.0-mac.zip
-    sha512: Dy0ZNb31wTWVYVyzuVrQJzx0eDFYzunqbLV97mTvm9sjiukuqs8TVl/Sib0y7I9Oo/eGao9StEantic1gHh2Xw==
-    size: 100645998
-  - url: GeistWerks-1.0.0-arm64.dmg
-    sha512: hEHPNIaGcd8KUZ3ClLHFRk+zIkL2OzTIpmtYfH5pisUwHyhJFIfD0p3Sd3Yg2eOp7mvlv9kUBTaNuzUE+DPmUw==
-    size: 99024556
-  - url: GeistWerks-1.0.0.dmg
-    sha512: K0dpTpgow+Xb5X6NFWn0MEKitc/8WrtDwJA85lZYxKp8aPpXo1UuTIMtglbJFQfpispZTT6G8XQPgtBp0M3yQA==
-    size: 104745504
-path: GeistWerks-1.0.0-arm64-mac.zip
-sha512: 0qQ6ugLTCFJXIxfOh/w1U3EPPr/c2bZD0HlbW//6mlxuQ2BspUXKeP1cdkhBqlEYpD3SOfNG3dptrpbHhLy0Yg==
-releaseDate: '2026-03-25T05:26:24.665Z'
+  - url: GeistWerks-1.0.1-arm64-mac.zip
+    sha512: DHxHw245TXUVzKhmOGxt6mFt/gu7viAaJoNVkx0iMTG/tD5zBWHJVadxCd6wVRuVabe2ALnVTgDz9T3cbo1mHg==
+    size: 95657834
+  - url: GeistWerks-1.0.1-mac.zip
+    sha512: z+2ypCgJaQVvLJk8le6eb/NM5mw6RN8R/+s8oVDW+sotgfpUdyktqbTAWZavMEPgS5xeFxVENDvJ1XbvVOzb7Q==
+    size: 100646387
+  - url: GeistWerks-1.0.1-arm64.dmg
+    sha512: payeCrv6OTdVOEYbwA8L+wSNm4e6FVILi8Z84ZJZln5NUSrCjogDrRAqDwObaxpXIAdoFc6bHN2p7i/TuMPtLg==
+    size: 99419589
+path: GeistWerks-1.0.1-arm64-mac.zip
+sha512: DHxHw245TXUVzKhmOGxt6mFt/gu7viAaJoNVkx0iMTG/tD5zBWHJVadxCd6wVRuVabe2ALnVTgDz9T3cbo1mHg==
+releaseDate: '2026-03-25T06:43:26.559Z'
