@@ -877,32 +877,23 @@
 
   /* TOAST */
   .toast {
+    display: none;
     position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--hud);
+    bottom: 24px;
+    right: 24px;
+    background: #121812;
+    border: 1px solid #1a2a1a;
+    border-left: 4px solid #39ff14;
     padding: 12px 18px;
     border-radius: 2px;
     font-family: 'Share Tech Mono', monospace;
     font-size: 12px;
     letter-spacing: 1px;
-    color: var(--text);
+    color: #b8d4b0;
     z-index: 10000;
-    opacity: 0;
-    transform: translateY(10px);
-    transition: opacity 0.2s ease, transform 0.2s ease;
-    pointer-events: none;
-    max-width: 320px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.6), 0 0 12px color-mix(in srgb, var(--hud) 10%, transparent);
+    max-width: 340px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.9);
   }
-  .toast.show {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
-  }
-  .toast.toast-err { border-left-color: var(--red); }
 
   /* ══ PRINT ══════════════════════════════════════════════════ */
   @media print {

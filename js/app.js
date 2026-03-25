@@ -5,11 +5,12 @@ const electronAPI = /** @type {any} */(window).electronAPI;
 let _toastTimer=null;
 function toast(msg,isErr=false) {
   const el=document.getElementById('toast');
+  if(!el) return;
   el.textContent=msg;
-  el.classList.toggle('toast-err',isErr);
-  el.classList.add('show');
+  el.style.borderLeftColor=isErr?'#cc1e1e':'#39ff14';
+  el.style.display='block';
   clearTimeout(_toastTimer);
-  _toastTimer=setTimeout(()=>el.classList.remove('show'),3000);
+  _toastTimer=setTimeout(()=>{ el.style.display='none'; },3200);
 }
 
 // No demo seed data
