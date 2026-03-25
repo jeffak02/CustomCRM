@@ -6,10 +6,10 @@ let _toastTimer=null;
 function toast(msg,isErr=false) {
   const el=document.getElementById('toast');
   el.textContent=msg;
-  el.style.borderLeftColor=isErr?'var(--red)':'var(--green)';
+  el.classList.toggle('toast-err',isErr);
   el.classList.add('show');
   clearTimeout(_toastTimer);
-  _toastTimer=setTimeout(()=>el.classList.remove('show'),2800);
+  _toastTimer=setTimeout(()=>el.classList.remove('show'),3000);
 }
 
 // No demo seed data
