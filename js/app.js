@@ -3,14 +3,26 @@
 const electronAPI = /** @type {any} */(window).electronAPI;
 // ─── TOAST ─────────────────────────────────────────────
 let _toastTimer=null;
+let _toastEl=null;
 function toast(msg,isErr=false) {
-  const el=document.getElementById('toast');
-  if(!el) return;
-  el.textContent=msg;
-  el.style.borderLeftColor=isErr?'#cc1e1e':'#39ff14';
-  el.style.display='block';
-  clearTimeout(_toastTimer);
-  _toastTimer=setTimeout(()=>{ el.style.display='none'; },3200);
+  try {
+    if(!_toastEl||!document.body.contains(_toastEl)){
+      _toastEl=document.createElement('div');
+      document.body.appendChild(_toastEl);
+    }
+    _toastEl.textContent=msg;
+    Object.assign(_toastEl.style,{
+      position:'fixed', bottom:'24px', right:'24px',
+      zIndex:'2147483647', display:'block',
+      background:'#0d1a0c', border:'1px solid #1a5c0a',
+      borderLeft:'4px solid '+(isErr?'#cc1e1e':'#39ff14'),
+      padding:'12px 18px', fontFamily:'monospace', fontSize:'13px',
+      color:'#c8e8c0', maxWidth:'360px', borderRadius:'2px',
+      boxShadow:'0 4px 24px rgba(0,0,0,0.9)', pointerEvents:'none',
+    });
+    clearTimeout(_toastTimer);
+    _toastTimer=setTimeout(()=>{ if(_toastEl) _toastEl.style.display='none'; },3200);
+  } catch(e){ console.error('toast error:',e); }
 }
 
 // No demo seed data

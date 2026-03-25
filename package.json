@@ -1,6 +1,6 @@
 {
   "name": "geistwerks",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "GeistWerks CRM — Automotive Shop Management",
   "main": "main.js",
   "scripts": {

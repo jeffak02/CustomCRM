@@ -11,8 +11,9 @@ function saveCustomer() {
     notes:document.getElementById('cust-notes').value,
     createdAt:new Date().toISOString()};
   const isEditing=!!editingId.customer;
-  upsert('customers',item); closeModal('customer'); renderAll();
+  upsert('customers',item); closeModal('customer');
   toast(isEditing?'Customer updated':'Customer added');
+  try{ renderAll(); }catch(e){ console.error(e); }
 }
 
 function saveVehicle() {
@@ -29,8 +30,9 @@ function saveVehicle() {
     ownerId:document.getElementById('veh-owner').value,
     notes:document.getElementById('veh-notes').value};
   const isEditing=!!editingId.vehicle;
-  upsert('vehicles',item); closeModal('vehicle'); renderAll();
+  upsert('vehicles',item); closeModal('vehicle');
   toast(isEditing?'Vehicle updated':'Vehicle added');
+  try{ renderAll(); }catch(e){ console.error(e); }
 }
 
 
@@ -190,8 +192,9 @@ function saveWorkorder() {
       : new Date().toISOString()
   };
   const isEditing=!!editingId.workorder;
-  upsert('workorders', item); closeModal('workorder'); renderAll();
+  upsert('workorders', item); closeModal('workorder');
   toast(isEditing ? 'Work order updated' : 'Work order #'+item.number+' created');
+  try{ renderAll(); }catch(e){ console.error(e); }
 }
 
 function saveInvoice() {
@@ -222,8 +225,9 @@ function saveInvoice() {
     notes:  document.getElementById('inv-notes').value
   };
   const isEditing=!!editingId.invoice;
-  upsert('invoices', item); closeModal('invoice'); renderAll();
+  upsert('invoices', item); closeModal('invoice');
   toast(isEditing ? 'Invoice updated' : 'Invoice #' + item.number + ' created');
+  try{ renderAll(); }catch(e){ console.error(e); }
 }
 
 
