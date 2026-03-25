@@ -1,6 +1,6 @@
 {
   "name": "geistwerks",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "GeistWerks CRM — Automotive Shop Management",
   "main": "main.js",
   "scripts": {
@@ -8,9 +8,6 @@
     "build": "electron-builder --mac --dir",
     "dist": "electron-builder --mac",
     "release": "electron-builder --mac --publish always"
-  },
-  "dependencies": {
-    "electron-updater": "^6.8.3"
   },
   "devDependencies": {
     "electron": "^34.0.0",
@@ -36,12 +33,14 @@
       "icon": "AppIcon.icns",
       "category": "public.app-category.business",
       "target": [
-        { "target": "dmg", "arch": ["arm64"] },
+        { "target": "pkg", "arch": ["arm64"] },
         { "target": "zip", "arch": ["arm64", "x64"] }
       ]
     },
-    "dmg": {
-      "title": "GeistWerks ${version}"
+    "pkg": {
+      "allowAnywhere": true,
+      "allowCurrentUserHome": false,
+      "isRelocatable": false
     }
   }
 }
