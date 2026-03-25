@@ -1,0 +1,20 @@
+How to add a future migration
+When you change the data shape in a new release, do this in main.js:
+
+
+const SCHEMA_VERSION = 2;  // bump this
+
+const MIGRATIONS = [
+  // v0 → v1 (existing)
+  (data) => { ... },
+
+  // v1 → v2 (new)
+  (data) => {
+    data.schemaVersion = 2;
+    // e.g. rename a field, add a default, reshape a collection
+    data.workorders.forEach(wo => { wo.estimatedHours = wo.estimatedHours ?? 0; });
+    return data;
+  },
+];
+The migration runs automatically on next launch for any user whose data is behind, their old data is backed up first, and users already on v2 are untouched.
+

@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GeistWerks CRM</title>
+<link rel="stylesheet" href="css/geistwerks.css">
+</head>
+<body>
+
+<div id="receipt-print-area"></div>
+
+<!-- WO Preview Panel -->
+<div class="wo-preview-overlay" id="wo-preview-overlay">
+  <div class="wo-preview-panel">
+    <div class="wo-preview-header">
+      <div class="wo-preview-title" id="wop-title">Work Order #—</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span id="wop-status-badge"></span>
+        <button class="modal-close" onclick="closeWOPreview()">×</button>
+      </div>
+    </div>
+    <div class="wo-preview-body" id="wop-body"></div>
+    <div class="wo-preview-footer">
+      <button class="btn-ghost" onclick="closeWOPreview()">Close</button>
+      <button class="btn-ghost" onclick="editFromPreview()">Edit</button>
+      <button class="btn-primary" onclick="invoiceFromPreview()">Create Invoice</button>
+    </div>
+  </div>
+</div>
+
+<header>
+  <div class="logo"><img src="data:image/png;base64,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" alt="GeistWerks"></div>
+  <nav>
+    <button class="active" onclick="showView('dashboard')">Dashboard</button>
+    <button onclick="showView('customers')">Customers</button>
+    <button onclick="showView('vehicles')">Vehicles</button>
+    <button onclick="showView('workorders')">Work Orders</button>
+    <button onclick="showView('invoices')">Invoices</button>
+    <button onclick="showView('settings')">Settings</button>
+  </nav>
+  <div class="header-right">
+    <div class="date-display" id="dateDisplay"></div>
+    <button id="update-btn" class="btn-update" style="display:none" onclick="window.electronAPI.installUpdate()">↑ UPDATE READY</button>
+    <button class="btn-primary" onclick="openAddModal()">+ New</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- DASHBOARD -->
+  <div id="view-dashboard" class="view active">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Dashboard</div>
+        <div class="page-subtitle">Shop overview at a glance</div>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Open Work Orders</div>
+        <div class="stat-value" id="stat-open-wo">0</div>
+        <div class="stat-sub">Active jobs in shop</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Completed This Month</div>
+        <div class="stat-value" id="stat-completed">0</div>
+        <div class="stat-sub">Jobs closed</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-label">Total Customers</div>
+        <div class="stat-value" id="stat-customers">0</div>
+        <div class="stat-sub">In database</div>
+      </div>
+      <div class="stat-card muted stat-card-redact">
+        <div class="stat-label">Revenue This Month</div>
+        <div class="stat-value" id="stat-revenue">$0</div>
+        <div class="stat-sub">From paid invoices</div>
+      </div>
+    </div>
+    <!-- ACTIVE JOBS BOARD — full width -->
+    <div class="dash-card" style="margin-bottom:20px">
+      <div class="dash-card-header" style="display:flex;justify-content:space-between;align-items:center">
+        <span>Active Jobs</span>
+        <div style="display:flex;gap:6px" id="dash-job-filters">
+          <button class="chart-tab active" onclick="setJobFilter('active')">Active</button>
+          <button class="chart-tab" onclick="setJobFilter('all')">All Open</button>
+          <button class="chart-tab" onclick="setJobFilter('waiting')">Waiting Parts</button>
+          <button class="chart-tab" onclick="setJobFilter('urgent')">Urgent</button>
+        </div>
+      </div>
+      <div id="dash-jobs-board"></div>
+    </div>
+
+    <div class="dash-grid">
+      <!-- CHARTS – full width -->
+      <div class="dash-card" style="grid-column:1/-1">
+        <div class="dash-card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+          <div style="display:flex;gap:4px">
+            <button class="chart-tab active" id="tab-revenue"     onclick="setChartTab('revenue')">Revenue</button>
+            <button class="chart-tab"        id="tab-jobs"        onclick="setChartTab('jobs')">Jobs</button>
+            <button class="chart-tab"        id="tab-outstanding" onclick="setChartTab('outstanding')">Outstanding</button>
+          </div>
+          <div class="range-slider-wrap">
+            <span class="range-label">7d</span>
+            <input type="range" id="chart-range-slider" class="range-slider"
+              min="0" max="100" value="50" step="1"
+              oninput="onRangeSlider(this.value)">
+            <span class="range-label">2yr</span>
+            <span class="range-current" id="range-label-current">6 months</span>
+          </div>
+        </div>
+        <div id="chart-area" style="padding:16px 20px 12px;position:relative;height:220px"></div>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <!-- CUSTOMERS -->
+  <div id="view-customers" class="view">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Customers</div>
+        <div class="page-subtitle" id="cust-count-label">0 customers</div>
+      </div>
+      <button class="btn-primary" onclick="openModal('customer')">+ Add Customer</button>
+    </div>
+    <div class="table-wrap">
+      <div class="table-toolbar">
+        <input class="search-input" type="text" placeholder="Search customers..." oninput="filterTable('customers',this.value)">
+      </div>
+      <div class="scrollable">
+        <table>
+          <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Vehicles</th><th>Total Spent</th><th>Actions</th></tr></thead>
+          <tbody id="customers-tbody"><tr><td colspan="6"><div class="empty-state"><div class="empty-icon">—</div><p>No customers yet.</p></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- WORK ORDERS -->
+  <div id="view-workorders" class="view">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Work Orders</div>
+        <div class="page-subtitle" id="wo-count-label">0 orders</div>
+      </div>
+      <button class="btn-primary" onclick="openModal('workorder')">+ New Work Order</button>
+    </div>
+    <div class="table-wrap">
+      <div class="table-toolbar">
+        <input class="search-input" type="text" placeholder="Search work orders..." oninput="filterTable('workorders',this.value)">
+        <select class="filter-select" onchange="filterWOStatus(this.value)">
+          <option value="">All Status</option>
+          <option value="estimate">Estimate</option>
+          <option value="open">Open</option>
+          <option value="inprogress">In Progress</option>
+          <option value="waiting">Waiting Parts</option>
+          <option value="completed">Completed</option>
+        </select>
+      </div>
+      <div class="scrollable">
+        <table>
+          <thead><tr><th>#</th><th>Customer</th><th>Vehicle</th><th>Description</th><th>Status</th><th>Priority</th><th>Tech</th><th>Est. Cost</th><th>Due</th><th>Actions</th></tr></thead>
+          <tbody id="workorders-tbody"><tr><td colspan="8"><div class="empty-state"><div class="empty-icon">—</div><p>No work orders yet.</p></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- VEHICLES -->
+  <div id="view-vehicles" class="view">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Vehicles</div>
+        <div class="page-subtitle" id="veh-count-label">0 vehicles</div>
+      </div>
+      <button class="btn-primary" onclick="openModal('vehicle')">+ Add Vehicle</button>
+    </div>
+    <div class="table-wrap" style="margin-bottom:16px">
+      <div class="table-toolbar">
+        <input class="search-input" type="text" placeholder="Search by VIN, make, model..." oninput="filterTable('vehicles',this.value)">
+      </div>
+    </div>
+    <div id="vehicles-grouped"></div>
+  </div>
+
+  <!-- INVOICES -->
+  <div id="view-invoices" class="view">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Invoices</div>
+        <div class="page-subtitle" id="inv-count-label">0 invoices</div>
+      </div>
+      <button class="btn-primary" onclick="openModal('invoice')">+ New Invoice</button>
+    </div>
+    <div class="table-wrap">
+      <div class="table-toolbar">
+        <input class="search-input" type="text" placeholder="Search invoices..." oninput="filterTable('invoices',this.value)">
+        <select class="filter-select" onchange="filterInvStatus(this.value)">
+          <option value="">All</option>
+          <option value="unpaid">Unpaid</option>
+          <option value="paid">Paid</option>
+          <option value="partial">Partial</option>
+        </select>
+      </div>
+      <div class="scrollable">
+        <table>
+          <thead><tr><th>Invoice #</th><th>Customer</th><th>Work Order</th><th>Labor</th><th>Parts</th><th>Total</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="invoices-tbody"><tr><td colspan="9"><div class="empty-state"><div class="empty-icon">—</div><p>No invoices yet.</p></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="view-settings" class="view">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Settings</div>
+        <div class="page-subtitle">Shop information &amp; preferences</div>
+      </div>
+    </div>
+    <div class="settings-panel">
+      <div class="settings-section-title">Shop Information</div>
+      <div class="form-grid">
+        <div class="form-group full"><label>Shop Name</label><input type="text" id="s-name" placeholder="GeistWerks Automotive"></div>
+        <div class="form-group full"><label>Address</label><input type="text" id="s-address" placeholder="123 Main St, Oakland, CA 94601"></div>
+        <div class="form-group"><label>Phone</label><input type="text" id="s-phone" placeholder="(510) 555-0100"></div>
+        <div class="form-group"><label>Email</label><input type="email" id="s-email" placeholder="shop@geistwerks.com"></div>
+        <div class="form-group"><label>Website</label><input type="text" id="s-website" placeholder="www.geistwerks.com"></div>
+        <div class="form-group"><label>License #</label><input type="text" id="s-license" placeholder="ARD-123456"></div>
+        <div class="form-group full"><label>Receipt Footer Message</label><textarea id="s-footer" placeholder="Thank you for your business! All work guaranteed for 12 months / 12,000 miles."></textarea></div>
+        <div class="form-group"><label>Default Tax Rate (%)</label><input type="number" id="s-tax" placeholder="8.5" step="0.01"></div>
+        <div class="form-group"><label>Labor Rate ($/hr)</label><input type="number" id="s-labor-rate" placeholder="120" step="1"></div>
+      </div>
+      <div style="margin-top:20px">
+        <button class="btn-primary" onclick="saveSettings()">Save Settings</button>
+      </div>
+      <div class="settings-section-title" style="margin-top:32px">Color Scheme</div>
+      <div class="form-grid" style="max-width:320px">
+        <div class="form-group">
+          <label>HUD Color</label>
+          <div class="color-pick-row">
+            <input type="color" id="s-hud-color" value="#39ff14" oninput="applyColorScheme(this.value, document.getElementById('s-accent-color').value)">
+            <span class="color-pick-hex" id="s-hud-hex">#39ff14</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Accent Color</label>
+          <div class="color-pick-row">
+            <input type="color" id="s-accent-color" value="#cc1e1e" oninput="applyColorScheme(document.getElementById('s-hud-color').value, this.value)">
+            <span class="color-pick-hex" id="s-accent-hex">#cc1e1e</span>
+          </div>
+        </div>
+      </div>
+      <div class="settings-section-title" style="margin-top:32px">Data Management</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <button class="btn-ghost" onclick="exportData()">Export Data (JSON)</button>
+        <button class="btn-ghost" onclick="document.getElementById('import-file').click()">Import Data (JSON)</button>
+        <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(this)">
+        <button class="btn-ghost" onclick="clearAllData()" style="border-color:var(--red);color:var(--red)">Clear All Data</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ── MODALS ─────────────────────────────────────────── -->
+
+<!-- Customer -->
+<div class="modal-overlay" id="modal-customer">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="cust-modal-title">Add Customer</div>
+      <button class="modal-close" onclick="closeModal('customer')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>First Name *</label><input type="text" id="cust-first" placeholder="John"></div>
+        <div class="form-group"><label>Last Name *</label><input type="text" id="cust-last" placeholder="Smith"></div>
+        <div class="form-group"><label>Phone</label><input type="tel" id="cust-phone" placeholder="(555) 000-0000"></div>
+        <div class="form-group"><label>Email</label><input type="email" id="cust-email" placeholder="john@email.com"></div>
+        <div class="form-group full"><label>Address</label><input type="text" id="cust-address" placeholder="123 Main St, City, State"></div>
+        <div class="form-group full"><label>Notes</label><textarea id="cust-notes" placeholder="Any special notes..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('customer')">Cancel</button>
+      <button class="btn-primary" onclick="saveCustomer()">Save Customer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Vehicle -->
+<div class="modal-overlay" id="modal-vehicle">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="veh-modal-title">Add Vehicle</div>
+      <button class="modal-close" onclick="closeModal('vehicle')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Year *</label><input type="number" id="veh-year" placeholder="2022" min="1900" max="2030"></div>
+        <div class="form-group"><label>Make *</label><input type="text" id="veh-make" placeholder="Toyota"></div>
+        <div class="form-group"><label>Model *</label><input type="text" id="veh-model" placeholder="Camry"></div>
+        <div class="form-group"><label>Trim</label><input type="text" id="veh-trim" placeholder="SE"></div>
+        <div class="form-group"><label>Color</label><input type="text" id="veh-color" placeholder="Silver"></div>
+        <div class="form-group"><label>License Plate</label><input type="text" id="veh-plate" placeholder="ABC1234"></div>
+        <div class="form-group full"><label>VIN</label><input type="text" id="veh-vin" placeholder="1HGCM82633A123456" maxlength="17"></div>
+        <div class="form-group"><label>Current Mileage</label><input type="number" id="veh-mileage" placeholder="45000"></div>
+        <div class="form-group"><label>Owner (Customer)</label><select id="veh-owner"></select></div>
+        <div class="form-group full"><label>Engine / Notes</label><textarea id="veh-notes" placeholder="2.5L 4-cyl, known issues..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('vehicle')">Cancel</button>
+      <button class="btn-primary" onclick="saveVehicle()">Save Vehicle</button>
+    </div>
+  </div>
+</div>
+
+<!-- Work Order -->
+<div class="modal-overlay" id="modal-workorder">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-header">
+      <div class="modal-title" id="wo-modal-title">New Work Order</div>
+      <button class="modal-close" onclick="closeModal('workorder')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <!-- Customer + phone -->
+        <div class="form-group">
+          <label>Customer *</label>
+          <select id="wo-customer" onchange="loadCustomerVehicles(); updateWOCustomerInfo()"></select>
+        </div>
+        <div class="form-group">
+          <label>Customer Phone</label>
+          <input type="text" id="wo-cust-phone" readonly placeholder="—"
+            style="color:var(--hud-dim);cursor:default;background:var(--surface3)">
+        </div>
+        <!-- Vehicle + mileage -->
+        <div class="form-group">
+          <label>Vehicle</label>
+          <select id="wo-vehicle" onchange="updateWOVehicleInfo()"></select>
+        </div>
+        <div class="form-group">
+          <label>Mileage In</label>
+          <input type="number" id="wo-mileage-in" placeholder="e.g. 48250" step="1" min="0">
+        </div>
+        <!-- Status + Priority -->
+        <div class="form-group">
+          <label>Status</label>
+          <select id="wo-status">
+            <option value="estimate">Estimate</option>
+            <option value="open">Open</option>
+            <option value="inprogress">In Progress</option>
+            <option value="waiting">Waiting Parts</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Priority</label>
+          <select id="wo-priority">
+            <option value="normal">Normal</option>
+            <option value="high">High</option>
+            <option value="urgent">Urgent</option>
+            <option value="low">Low — Whenever</option>
+          </select>
+        </div>
+        <!-- Dates + cost + tech -->
+        <div class="form-group"><label>Date In</label><input type="date" id="wo-datein"></div>
+        <div class="form-group"><label>Promised Date</label><input type="date" id="wo-datepromise"></div>
+        <div class="form-group"><label>Est. Cost ($)</label><input type="number" id="wo-cost" placeholder="250.00" step="0.01"></div>
+        <div class="form-group"><label>Assigned Technician</label>
+          <input type="text" id="wo-tech" placeholder="Name or initials">
+        </div>
+        <!-- Description -->
+        <div class="form-group full"><label>Description of Work *</label>
+          <textarea id="wo-description" rows="2" placeholder="Oil change, brake inspection, replace front pads..."></textarea>
+        </div>
+
+        <!-- PARTS SECTION — with progress checkboxes -->
+        <div class="li-section">
+          <div class="li-section-header">
+            <span class="li-section-label">Parts &amp; Materials</span>
+            <span class="li-section-total" id="wo-parts-progress-label"></span>
+          </div>
+          <div id="wo-parts-progress" class="wo-progress-wrap" style="display:none">
+            <div class="wo-progress-track"><div class="wo-progress-fill" id="wo-parts-fill" style="width:0%"></div></div>
+            <span class="wo-progress-label" id="wo-parts-fill-label">0/0</span>
+          </div>
+          <div style="display:grid;grid-template-columns:22px 1fr 54px 78px 78px 28px;gap:6px;padding:2px 0 4px">
+            <span></span>
+            <span class="li-col-header">Description</span>
+            <span class="li-col-header">Qty</span>
+            <span class="li-col-header right">Unit $</span>
+            <span class="li-col-header right">Subtotal</span>
+            <span></span>
+          </div>
+          <div id="wo-parts-list"></div>
+          <button type="button" class="li-add-btn" onclick="addWOPartRow()">+ Add Part / Material</button>
+        </div>
+
+        <!-- LABOR SECTION — with progress checkboxes -->
+        <div class="li-section">
+          <div class="li-section-header">
+            <span class="li-section-label">Labor</span>
+            <span class="li-section-total" id="wo-labor-progress-label"></span>
+          </div>
+          <div id="wo-labor-progress" class="wo-progress-wrap" style="display:none">
+            <div class="wo-progress-track"><div class="wo-progress-fill" id="wo-labor-fill" style="width:0%"></div></div>
+            <span class="wo-progress-label" id="wo-labor-fill-label">0/0</span>
+          </div>
+          <div style="display:grid;grid-template-columns:22px 1fr 60px 78px 78px 56px 28px;gap:6px;padding:2px 0 4px">
+            <span></span>
+            <span class="li-col-header">Description</span>
+            <span class="li-col-header">Hrs</span>
+            <span class="li-col-header right">Rate</span>
+            <span class="li-col-header right">Subtotal</span>
+            <span class="li-col-header" style="text-align:center">Type</span>
+            <span></span>
+          </div>
+          <div id="wo-labor-list"></div>
+          <button type="button" class="li-add-btn" onclick="addWOLaborRow()">+ Add Labor</button>
+        </div>
+
+        <!-- Notes -->
+        <div class="form-group full"><label>Technician Notes</label>
+          <textarea id="wo-notes" rows="2" placeholder="Parts ordered, waiting on delivery, customer notified..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('workorder')">Cancel</button>
+      <button class="btn-primary" onclick="saveWorkorder()">Save Work Order</button>
+    </div>
+  </div>
+</div>
+
+<!-- Invoice -->
+<div class="modal-overlay" id="modal-invoice">
+  <div class="modal" style="max-width:700px">
+    <div class="modal-header">
+      <div class="modal-title" id="inv-modal-title">New Invoice</div>
+      <button class="modal-close" onclick="closeModal('invoice')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Customer *</label><select id="inv-customer" onchange="onInvCustomerChange()"></select></div>
+        <div class="form-group"><label>Work Order</label><select id="inv-workorder" onchange="autoFillFromWorkOrder()"></select></div>
+        <div class="form-group" id="inv-vehicle-group"><label>Vehicle</label><select id="inv-vehicle"></select></div>
+        <div class="form-group">
+          <label>Tax (%)</label>
+          <input type="text" id="inv-tax" readonly
+            style="color:var(--hud-dim);cursor:default;background:var(--surface3)"
+            placeholder="—">
+        </div>
+        <div class="form-group"><label>Payment Status</label>
+          <select id="inv-status" onchange="toggleAmountPaid()">
+            <option value="unpaid">Unpaid</option>
+            <option value="partial">Partial</option>
+            <option value="paid">Paid</option>
+          </select>
+        </div>
+        <div class="form-group" id="amount-paid-group" style="display:none">
+          <label>Amount Paid ($)</label>
+          <input type="number" id="inv-amount-paid" placeholder="0.00" step="0.01" min="0" oninput="updatePaidDisplay()">
+        </div>
+        <div class="form-group"><label>Invoice Date</label><input type="date" id="inv-date"></div>
+        <div class="form-group"><label>Total</label><input type="text" id="inv-total" readonly style="color:var(--hud);font-family:'Share Tech Mono',monospace" placeholder="$0.00"></div>
+
+        <!-- PARTS SECTION -->
+        <div class="li-section">
+          <div class="li-section-header">
+            <span class="li-section-label">Parts &amp; Materials</span>
+            <span class="li-section-total">Subtotal: <span id="parts-subtotal">$0.00</span></span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 50px 76px 76px 56px 28px;gap:4px;padding:0 0 2px">
+            <span class="li-col-header">Description</span>
+            <span class="li-col-header">Qty</span>
+            <span class="li-col-header right">Unit $</span>
+            <span class="li-col-header right">Total</span>
+            <span class="li-col-header" style="text-align:center">Tax?</span>
+            <span></span>
+          </div>
+          <div id="parts-list"></div>
+          <button type="button" class="li-add-btn" onclick="addPartRow()">+ Add Part / Material</button>
+        </div>
+
+        <!-- LABOR SECTION -->
+        <div class="li-section">
+          <div class="li-section-header">
+            <span class="li-section-label">Labor</span>
+            <span class="li-section-total">Subtotal: <span id="labor-subtotal">$0.00</span></span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 56px 76px 76px 56px 28px;gap:4px;padding:0 0 2px">
+            <span class="li-col-header">Description</span>
+            <span class="li-col-header">Hrs</span>
+            <span class="li-col-header right">Rate</span>
+            <span class="li-col-header right">Total</span>
+            <span class="li-col-header" style="text-align:center">Type</span>
+            <span></span>
+          </div>
+          <div id="labor-list"></div>
+          <button type="button" class="li-add-btn" onclick="addLaborRow()">+ Add Labor</button>
+        </div>
+
+        <!-- GRAND TOTAL SUMMARY -->
+        <div class="li-grand-total" style="grid-column:1/-1">
+          <div class="gt-item">Parts <span class="gt-val" id="gt-parts">$0.00</span></div>
+          <div class="gt-item">Labor <span class="gt-val" id="gt-labor">$0.00</span></div>
+          <div class="gt-item" style="font-size:10px;color:var(--text3)">Taxable Subtotal <span class="gt-val" id="gt-taxable-sub" style="color:var(--text3)">$0.00</span></div>
+          <div class="gt-item">Tax (<span id="gt-tax-pct">0</span>%) <span class="gt-val" id="gt-tax-amt">$0.00</span></div>
+          <div class="gt-item" style="font-size:13px;color:var(--text)">Total <span class="gt-val" id="gt-total" style="font-size:14px">$0.00</span></div>
+        </div>
+        <div id="paid-preview" style="grid-column:1/-1;display:none" class="payment-progress">
+          <div class="payment-bar-track"><div class="payment-bar-fill" id="paid-bar" style="width:0%"></div></div>
+          <div class="payment-meta"><span id="paid-label">$0.00 paid</span><span id="owed-label">$0.00 remaining</span></div>
+        </div>
+
+        <div class="form-group full"><label>Notes</label><textarea id="inv-notes" placeholder="Warranty info, payment notes..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('invoice')">Cancel</button>
+      <button class="btn-primary" onclick="saveInvoice()">Save Invoice</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/db.js"></script>
+<script src="js/modals.js"></script>
+<script src="js/line-items.js"></script>
+<script src="js/save.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/print.js"></script>
+<script src="js/render.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/preview.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
