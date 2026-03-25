@@ -1,0 +1,5 @@
+mac/
+mac-arm64/
+builder-debug.yml
+builder-effective-config.yaml
+*.icloud
