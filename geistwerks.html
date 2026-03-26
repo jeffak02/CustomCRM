@@ -37,11 +37,13 @@
     <button onclick="showView('vehicles')">Vehicles</button>
     <button onclick="showView('workorders')">Work Orders</button>
     <button onclick="showView('invoices')">Invoices</button>
+    <button onclick="showView('expenses')">Expenses</button>
+    <button onclick="showView('calendar')">Calendar</button>
     <button onclick="showView('settings')">Settings</button>
   </nav>
   <div class="header-right">
     <div class="date-display" id="dateDisplay"></div>
-    <button id="update-btn" class="btn-update" style="display:none" onclick="window.electronAPI.installUpdate()">↑ UPDATE READY</button>
+    <button id="update-btn" class="btn-update" style="display:none">↑ UPDATE READY</button>
     <button class="btn-primary" onclick="openAddModal()">+ New</button>
   </div>
 </header>
@@ -55,64 +57,118 @@
         <div class="page-title">Dashboard</div>
         <div class="page-subtitle">Shop overview at a glance</div>
       </div>
+      <button class="dash-edit-btn" id="dash-edit-btn" onclick="toggleDashEditMode()">⠿ Edit Layout</button>
     </div>
-    <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-label">Open Work Orders</div>
-        <div class="stat-value" id="stat-open-wo">0</div>
-        <div class="stat-sub">Active jobs in shop</div>
-      </div>
-      <div class="stat-card green">
-        <div class="stat-label">Completed This Month</div>
-        <div class="stat-value" id="stat-completed">0</div>
-        <div class="stat-sub">Jobs closed</div>
-      </div>
-      <div class="stat-card blue">
-        <div class="stat-label">Total Customers</div>
-        <div class="stat-value" id="stat-customers">0</div>
-        <div class="stat-sub">In database</div>
-      </div>
-      <div class="stat-card muted stat-card-redact">
-        <div class="stat-label">Revenue This Month</div>
-        <div class="stat-value" id="stat-revenue">$0</div>
-        <div class="stat-sub">From paid invoices</div>
-      </div>
-    </div>
-    <!-- ACTIVE JOBS BOARD — full width -->
-    <div class="dash-card" style="margin-bottom:20px">
-      <div class="dash-card-header" style="display:flex;justify-content:space-between;align-items:center">
-        <span>Active Jobs</span>
-        <div style="display:flex;gap:6px" id="dash-job-filters">
-          <button class="chart-tab active" onclick="setJobFilter('active')">Active</button>
-          <button class="chart-tab" onclick="setJobFilter('all')">All Open</button>
-          <button class="chart-tab" onclick="setJobFilter('waiting')">Waiting Parts</button>
-          <button class="chart-tab" onclick="setJobFilter('urgent')">Urgent</button>
-        </div>
-      </div>
-      <div id="dash-jobs-board"></div>
-    </div>
+    <div id="dash-widgets">
 
-    <div class="dash-grid">
-      <!-- CHARTS – full width -->
-      <div class="dash-card" style="grid-column:1/-1">
-        <div class="dash-card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-          <div style="display:flex;gap:4px">
-            <button class="chart-tab active" id="tab-revenue"     onclick="setChartTab('revenue')">Revenue</button>
-            <button class="chart-tab"        id="tab-jobs"        onclick="setChartTab('jobs')">Jobs</button>
-            <button class="chart-tab"        id="tab-outstanding" onclick="setChartTab('outstanding')">Outstanding</button>
+      <!-- WIDGET: Open Work Orders ──────────────────── -->
+      <div class="dash-widget dash-widget-stat" data-widget="w-stat-open-wo" draggable="false">
+        <div class="widget-grab">⠿ &nbsp;OPEN WOs<span class="widget-grab-spacer"></span><button class="widget-resize-btn" onclick="cycleWidgetSize(this.closest('.dash-widget'))">⊡ SIZE</button></div>
+        <div class="stat-card">
+          <div class="stat-label">Open Work Orders</div>
+          <div class="stat-value" id="stat-open-wo">0</div>
+          <div class="stat-sub">Active jobs in shop</div>
+        </div>
+      </div>
+
+      <!-- WIDGET: Completed ─────────────────────────── -->
+      <div class="dash-widget dash-widget-stat" data-widget="w-stat-completed" draggable="false">
+        <div class="widget-grab">⠿ &nbsp;COMPLETED<span class="widget-grab-spacer"></span><button class="widget-resize-btn" onclick="cycleWidgetSize(this.closest('.dash-widget'))">⊡ SIZE</button></div>
+        <div class="stat-card green">
+          <div class="stat-label">Completed This Month</div>
+          <div class="stat-value" id="stat-completed">0</div>
+          <div class="stat-sub">Jobs closed</div>
+        </div>
+      </div>
+
+      <!-- WIDGET: Customers ─────────────────────────── -->
+      <div class="dash-widget dash-widget-stat" data-widget="w-stat-customers" draggable="false">
+        <div class="widget-grab">⠿ &nbsp;CUSTOMERS<span class="widget-grab-spacer"></span><button class="widget-resize-btn" onclick="cycleWidgetSize(this.closest('.dash-widget'))">⊡ SIZE</button></div>
+        <div class="stat-card blue">
+          <div class="stat-label">Total Customers</div>
+          <div class="stat-value" id="stat-customers">0</div>
+          <div class="stat-sub">In database</div>
+        </div>
+      </div>
+
+      <!-- WIDGET: Revenue ───────────────────────────── -->
+      <div class="dash-widget dash-widget-stat" data-widget="w-stat-revenue" draggable="false">
+        <div class="widget-grab">⠿ &nbsp;REVENUE<span class="widget-grab-spacer"></span><button class="widget-resize-btn" onclick="cycleWidgetSize(this.closest('.dash-widget'))">⊡ SIZE</button></div>
+        <div class="stat-card muted stat-card-redact">
+          <div class="stat-label">Revenue This Month</div>
+          <div class="stat-value" id="stat-revenue">$0</div>
+          <div class="stat-sub">From paid invoices</div>
+        </div>
+      </div>
+
+      <!-- WIDGET: Expenses ──────────────────────────── -->
+      <div class="dash-widget dash-widget-stat" data-widget="w-stat-expenses" draggable="false">
+        <div class="widget-grab">⠿ &nbsp;EXPENSES<span class="widget-grab-spacer"></span><button class="widget-resize-btn" onclick="cycleWidgetSize(this.closest('.dash-widget'))">⊡ SIZE</button></div>
+        <div class="stat-card muted stat-card-redact">
+          <div class="stat-label">Expenses This Month</div>
+          <div class="stat-value" id="stat-expenses">$0</div>
+          <div class="stat-sub">Shop expenses</div>
+        </div>
+      </div>
+
+      <!-- WIDGET: Mini Calendar ──────────────────────── -->
+      <div class="dash-widget" data-widget="calendar" draggable="false">
+        <div class="widget-grab">⠿ &nbsp;CALENDAR<span class="widget-grab-spacer"></span><button class="widget-resize-btn" onclick="cycleWidgetSize(this.closest('.dash-widget'))">⊡ SIZE</button></div>
+        <div class="dash-card">
+          <div class="dash-card-header" style="display:flex;justify-content:space-between;align-items:center">
+            <span id="dash-mini-cal-label">—</span>
+            <span onclick="showView('calendar')" style="font-size:10px;color:var(--hud);cursor:pointer;letter-spacing:1px;font-family:'Share Tech Mono',monospace">VIEW ALL →</span>
           </div>
-          <div class="range-slider-wrap">
-            <span class="range-label">7d</span>
-            <input type="range" id="chart-range-slider" class="range-slider"
-              min="0" max="100" value="50" step="1"
-              oninput="onRangeSlider(this.value)">
-            <span class="range-label">2yr</span>
-            <span class="range-current" id="range-label-current">6 months</span>
+          <div class="mcal-body">
+            <div id="dash-mini-cal" class="mcal-grid"></div>
+            <div class="mcal-upcoming-wrap">
+              <div class="mcal-upcoming-hdr">Upcoming</div>
+              <div id="dash-upcoming"></div>
+            </div>
           </div>
         </div>
-        <div id="chart-area" style="padding:16px 20px 12px;position:relative;height:220px"></div>
       </div>
-    </div>
+
+      <!-- WIDGET: Active Jobs ────────────────────────── -->
+      <div class="dash-widget" data-widget="jobs" draggable="false">
+        <div class="widget-grab">⠿ &nbsp;ACTIVE JOBS<span class="widget-grab-spacer"></span><button class="widget-resize-btn" onclick="cycleWidgetSize(this.closest('.dash-widget'))">⊡ SIZE</button></div>
+        <div class="dash-card">
+          <div class="dash-card-header" style="display:flex;justify-content:space-between;align-items:center">
+            <span>Active Jobs</span>
+            <div style="display:flex;gap:6px" id="dash-job-filters">
+              <button class="chart-tab active" onclick="setJobFilter('active')">Active</button>
+              <button class="chart-tab" onclick="setJobFilter('all')">All Open</button>
+              <button class="chart-tab" onclick="setJobFilter('waiting')">Waiting Parts</button>
+              <button class="chart-tab" onclick="setJobFilter('urgent')">Urgent</button>
+            </div>
+          </div>
+          <div id="dash-jobs-board"></div>
+        </div>
+      </div>
+
+      <!-- WIDGET: Chart ──────────────────────────────── -->
+      <div class="dash-widget" data-widget="chart" draggable="false">
+        <div class="widget-grab">⠿ &nbsp;CHART<span class="widget-grab-spacer"></span><button class="widget-resize-btn" onclick="cycleWidgetSize(this.closest('.dash-widget'))">⊡ SIZE</button></div>
+        <div class="dash-card">
+          <div class="dash-card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+            <div style="display:flex;gap:4px">
+              <button class="chart-tab active" id="tab-revenue"     onclick="setChartTab('revenue')">Revenue</button>
+              <button class="chart-tab"        id="tab-jobs"        onclick="setChartTab('jobs')">Jobs</button>
+              <button class="chart-tab"        id="tab-outstanding" onclick="setChartTab('outstanding')">Outstanding</button>
+            </div>
+            <div class="range-slider-wrap">
+              <span class="range-label">7d</span>
+              <input type="range" id="chart-range-slider" class="range-slider"
+                min="0" max="100" value="50" step="1"
+                oninput="onRangeSlider(this.value)">
+              <span class="range-label">2yr</span>
+              <span class="range-current" id="range-label-current">6 months</span>
+            </div>
+          </div>
+          <div id="chart-area" style="padding:16px 20px 12px;position:relative;height:220px"></div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -213,6 +269,90 @@
     </div>
   </div>
 
+  <!-- EXPENSES -->
+  <div id="view-expenses" class="view">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Expenses</div>
+        <div class="page-subtitle" id="exp-count-label">0 expenses</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="print-dd" id="exp-export-dd">
+          <button class="btn-ghost" onclick="togglePrintDD('exp-export-dd')">Export ▾</button>
+          <div class="print-dd-menu">
+            <button onclick="closePrintDDs();exportExpensesCSV()">📄 CSV</button>
+            <button onclick="closePrintDDs();printExpenses()">🖨 Print</button>
+            <button onclick="closePrintDDs();saveExpensesPDF()">💾 Save PDF</button>
+          </div>
+        </div>
+        <button class="btn-primary" onclick="openModal('expense')">+ Add Expense</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <div class="table-toolbar">
+        <input class="search-input" type="text" placeholder="Search expenses..." oninput="filterTable('expenses',this.value)">
+        <select class="filter-select" id="exp-category-filter" onchange="filterExpCategory(this.value)">
+          <option value="">All Categories</option>
+          <option value="supplies">Supplies</option>
+          <option value="tools">Tools &amp; Equipment</option>
+          <option value="utilities">Utilities</option>
+          <option value="insurance">Insurance</option>
+          <option value="rent">Rent / Lease</option>
+          <option value="other">Other</option>
+        </select>
+        <select class="filter-select" id="exp-year-filter" onchange="filterExpYear(this.value)">
+          <option value="">All Years</option>
+        </select>
+      </div>
+      <div class="scrollable">
+        <table>
+          <thead><tr><th>Date</th><th>Vendor</th><th>Description</th><th>Category</th><th>Amount</th><th>Actions</th></tr></thead>
+          <tbody id="expenses-tbody"><tr><td colspan="6"><div class="empty-state"><div class="empty-icon">—</div><p>No expenses yet.</p></div></td></tr></tbody>
+        </table>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-top:1px solid var(--border);font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text2)">
+        <span id="exp-filter-label"></span>
+        <span>Total: <span id="exp-total-label" style="color:var(--hud)">$0.00</span></span>
+      </div>
+    </div>
+    <!-- Summary cards -->
+    <div style="display:flex;gap:16px;margin-top:16px;flex-wrap:wrap">
+      <div class="dash-card" style="flex:1;min-width:240px">
+        <div class="dash-card-header">Monthly Totals</div>
+        <div id="exp-monthly-summary" style="padding:4px 0"></div>
+      </div>
+      <div class="dash-card" style="flex:1;min-width:240px">
+        <div class="dash-card-header">By Category</div>
+        <div id="exp-tax-summary" style="padding:4px 0"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CALENDAR -->
+  <div id="view-calendar" class="view">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Calendar</div>
+        <div class="page-subtitle" id="cal-event-count">0 events</div>
+      </div>
+      <div style="display:flex;gap:14px;align-items:center">
+        <label class="apple-sync-label">
+          <input type="checkbox" id="apple-sync-cb" onchange="onAppleSyncToggle(this.checked)">
+          <span class="apple-sync-track"></span>
+          <span>Apple Calendar Sync</span>
+        </label>
+        <button class="btn-primary" onclick="openModal('event')">+ Add Event</button>
+      </div>
+    </div>
+    <div class="cal-nav">
+      <button class="btn-ghost cal-nav-btn" onclick="calPrevMonth()">←</button>
+      <button class="btn-ghost cal-nav-btn" onclick="calToday()">Today</button>
+      <span id="cal-month-label" class="cal-month-label">—</span>
+      <button class="btn-ghost cal-nav-btn" onclick="calNextMonth()">→</button>
+    </div>
+    <div id="cal-grid" class="cal-grid"></div>
+  </div>
+
   <!-- SETTINGS -->
   <div id="view-settings" class="view">
     <div class="page-header">
@@ -260,6 +400,9 @@
         <button class="btn-ghost" onclick="document.getElementById('import-file').click()">Import Data (JSON)</button>
         <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(this)">
         <button class="btn-ghost" onclick="clearAllData()" style="border-color:var(--red);color:var(--red)">Clear All Data</button>
+      </div>
+      <div id="settings-version" style="margin-top:40px;padding-top:16px;border-top:1px solid var(--border);font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text3);letter-spacing:1px">
+        GEISTWERKS CRM &nbsp;·&nbsp; <span id="settings-version-num">—</span>
       </div>
     </div>
   </div>
@@ -529,6 +672,106 @@
   </div>
 </div>
 
+<!-- Event -->
+<div class="modal-overlay" id="modal-event">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title" id="ev-modal-title">Add Event</div>
+      <button class="modal-close" onclick="closeModal('event')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full"><label>Title *</label><input type="text" id="ev-title" placeholder="Event title…"></div>
+        <div class="form-group"><label>Date *</label><input type="date" id="ev-date"></div>
+        <div class="form-group">
+          <label>Type</label>
+          <select id="ev-type">
+            <option value="event">Event</option>
+            <option value="reminder">Reminder</option>
+            <option value="appointment">Appointment</option>
+            <option value="deadline">Deadline</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Start Time</label><input type="time" id="ev-start-time"></div>
+        <div class="form-group"><label>End Time</label><input type="time" id="ev-end-time"></div>
+        <div class="form-group">
+          <label>Color</label>
+          <div class="color-pick-row">
+            <input type="color" id="ev-color" value="#39ff14" oninput="document.getElementById('ev-color-hex').textContent=this.value">
+            <span class="color-pick-hex" id="ev-color-hex">#39ff14</span>
+          </div>
+        </div>
+        <div class="form-group full"><label>Notes</label><textarea id="ev-notes" rows="2" placeholder="Details, links, reminders…"></textarea></div>
+        <div class="form-group full" id="ev-apple-row" style="display:none">
+          <span style="font-size:10px;color:var(--text3);font-family:'Share Tech Mono',monospace;letter-spacing:1px">APPLE CALENDAR: <span id="ev-apple-status" style="color:var(--hud)">SYNCED</span></span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('event')">Cancel</button>
+      <button class="btn-ghost" id="ev-delete-btn" onclick="deleteItem('event',editingId.event)" style="display:none;border-color:var(--red);color:var(--red)">Delete</button>
+      <button class="btn-primary" onclick="saveCalEvent()">Save Event</button>
+    </div>
+  </div>
+</div>
+
+<!-- Expense -->
+<div class="modal-overlay" id="modal-expense">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title" id="exp-modal-title">Add Expense</div>
+      <button class="modal-close" onclick="closeModal('expense')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Date *</label><input type="date" id="exp-date"></div>
+        <div class="form-group"><label>Amount ($) *</label><input type="number" id="exp-amount" placeholder="0.00" min="0" step="0.01"></div>
+        <div class="form-group full"><label>Vendor *</label><input type="text" id="exp-vendor" placeholder="NAPA, Amazon, Home Depot…"></div>
+        <div class="form-group full"><label>Description *</label><input type="text" id="exp-description" placeholder="Brake clean, shop rags, torque wrench…"></div>
+        <div class="form-group">
+          <label>Category</label>
+          <select id="exp-category">
+            <option value="supplies">Supplies</option>
+            <option value="tools">Tools &amp; Equipment</option>
+            <option value="utilities">Utilities</option>
+            <option value="insurance">Insurance</option>
+            <option value="rent">Rent / Lease</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group full"><label>Notes</label><textarea id="exp-notes" rows="2" placeholder="PO number, receipt ref, etc."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('expense')">Cancel</button>
+      <button class="btn-primary" onclick="saveExpense()">Save Expense</button>
+    </div>
+  </div>
+</div>
+
+<!-- Update Modal -->
+<div class="modal-overlay" id="modal-update">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title">Update Available</div>
+      <button class="modal-close" id="update-modal-close">×</button>
+    </div>
+    <div class="modal-body">
+      <p id="update-modal-msg" style="margin:0 0 16px;color:var(--text);line-height:1.5"></p>
+      <div id="update-progress-wrap" style="display:none">
+        <div style="background:var(--surface3);border-radius:2px;height:6px;overflow:hidden;margin-bottom:8px">
+          <div id="update-progress-bar" style="background:var(--hud);height:100%;width:0%;transition:width 0.3s ease"></div>
+        </div>
+        <div id="update-progress-label" style="font-size:12px;color:var(--text2);text-align:center;font-family:'Share Tech Mono',monospace">Downloading…</div>
+      </div>
+    </div>
+    <div class="modal-footer" id="update-modal-footer">
+      <button class="btn-ghost" id="update-later-btn">Later</button>
+      <button class="btn-primary" id="update-install-btn">Install Now</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="js/db.js"></script>
@@ -539,6 +782,7 @@
 <script src="js/print.js"></script>
 <script src="js/render.js"></script>
 <script src="js/dashboard.js"></script>
+<script src="js/calendar.js"></script>
 <script src="js/preview.js"></script>
 <script src="js/app.js"></script>
 </body>

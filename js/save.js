@@ -259,6 +259,90 @@ function updatePaidDisplay() {
   }
 }
 
+function _buildCalEventItem() {
+  const isEditing = !!editingId.event;
+  const existing  = isEditing ? (DB.calEvents||[]).find(x=>x.id===editingId.event) : null;
+  return {
+    id:        editingId.event || uid(),
+    title:     document.getElementById('ev-title').value.trim(),
+    date:      document.getElementById('ev-date').value,
+    type:      document.getElementById('ev-type').value      || 'event',
+    startTime: document.getElementById('ev-start-time').value || '',
+    endTime:   document.getElementById('ev-end-time').value   || '',
+    color:     document.getElementById('ev-color').value      || '#39ff14',
+    notes:     document.getElementById('ev-notes').value      || '',
+    appleUid:  existing ? (existing.appleUid || null) : null,
+    createdAt: existing ? (existing.createdAt || new Date().toISOString()) : new Date().toISOString()
+  };
+}
+
+async function saveCalEvent() {
+  const title = document.getElementById('ev-title').value.trim();
+  const date  = document.getElementById('ev-date').value;
+  if (!title || !date) { toast('Title and date required', true); return; }
+  const isEditing = !!editingId.event;
+  const item = _buildCalEventItem();
+  upsert('calEvents', item);
+  closeModal('event');
+  toast(isEditing ? 'Event updated' : 'Event added');
+  try { renderAll(); } catch(e) { console.error(e); }
+  // Auto-sync if checkbox is on
+  if (DB.settings.appleCalSync) await syncEventToApple(item.id);
+}
+
+async function saveAndSyncEvent() {
+  const title = document.getElementById('ev-title').value.trim();
+  const date  = document.getElementById('ev-date').value;
+  if (!title || !date) { toast('Title and date required', true); return; }
+  const isEditing = !!editingId.event;
+  const item = _buildCalEventItem();
+  upsert('calEvents', item);
+  closeModal('event');
+  toast((isEditing ? 'Event updated' : 'Event added') + ' — syncing…');
+  try { renderAll(); } catch(e) { console.error(e); }
+  await syncEventToApple(item.id);
+}
+
+function saveExpense() {
+  const date   = document.getElementById('exp-date').value;
+  const vendor = document.getElementById('exp-vendor').value.trim();
+  const desc   = document.getElementById('exp-description').value.trim();
+  const amount = parseFloat(document.getElementById('exp-amount').value);
+  if (!date || !vendor || !desc || isNaN(amount) || amount < 0) {
+    toast('Date, vendor, description, and amount required', true); return;
+  }
+  const isEditing = !!editingId.expense;
+  const item = {
+    id: editingId.expense || uid(),
+    date, vendor, description: desc,
+    category: document.getElementById('exp-category').value || 'supplies',
+    amount,
+    notes: document.getElementById('exp-notes').value,
+    createdAt: isEditing
+      ? (DB.expenses.find(x=>x.id===editingId.expense)?.createdAt || new Date().toISOString())
+      : new Date().toISOString()
+  };
+  upsert('expenses', item); closeModal('expense');
+  toast(isEditing ? 'Expense updated' : 'Expense added');
+  try { renderAll(); } catch(e) { console.error(e); }
+}
+
+function exportExpensesCSV() {
+  const expenses = DB.expenses.slice().sort((a,b) => (a.date||'').localeCompare(b.date||''));
+  if (!expenses.length) { toast('No expenses to export', true); return; }
+  const catLabels = {supplies:'Supplies',tools:'Tools & Equipment',utilities:'Utilities',insurance:'Insurance',rent:'Rent / Lease',other:'Other'};
+  const esc = v => '"' + String(v).replace(/"/g,'""') + '"';
+  const rows = [['Date','Vendor','Description','Category','Amount','Notes']].concat(
+    expenses.map(e => [e.date||'', e.vendor||'', e.description||'', catLabels[e.category]||e.category||'', (e.amount||0).toFixed(2), e.notes||''])
+  );
+  const csv = rows.map(r => r.map(esc).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  a.download = 'geistwerks-expenses-' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
+  toast('Expenses exported to CSV');
+}
+
 function upsert(col,item) {
   let list=DB[col]; const idx=list.findIndex(x=>x.id===item.id);
   if(idx>=0) list[idx]=item; else list.push(item);
@@ -267,7 +351,16 @@ function upsert(col,item) {
 
 function deleteItem(type,id) {
   if(!confirm('Delete this '+type+'? This cannot be undone.')) return;
-  DB[type+'s']=DB[type+'s'].filter(x=>x.id!==id);
+  if(type==='event') {
+    const ev=(DB.calEvents||[]).find(x=>x.id===id);
+    if(ev && ev.appleUid && window.electronAPI && window.electronAPI.appleCalRemove) {
+      window.electronAPI.appleCalRemove(ev.appleUid);
+    }
+    DB.calEvents=DB.calEvents.filter(x=>x.id!==id);
+  } else {
+    DB[type+'s']=DB[type+'s'].filter(x=>x.id!==id);
+  }
+  closeModal(type);
   renderAll();
   toast(type.charAt(0).toUpperCase()+type.slice(1)+' deleted');
 }

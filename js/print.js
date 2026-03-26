@@ -1,7 +1,34 @@
 'use strict';
-// ─── PRINTING ──────────────────────────────────────────
-function printInvoice(invoiceId) {
-  const inv   = DB.invoices.find(x => x.id === invoiceId); if (!inv) return;
+// ─── PRINT DROPDOWN HELPERS ────────────────────────────────────────────────
+function togglePrintDD(id) {
+  const dd = document.getElementById(id);
+  if (!dd) return;
+  const wasOpen = dd.classList.contains('open');
+  closePrintDDs();
+  if (!wasOpen) {
+    dd.classList.add('open');
+    const btn = dd.querySelector('.action-btn');
+    const menu = dd.querySelector('.print-dd-menu');
+    if (btn && menu) {
+      const r = btn.getBoundingClientRect();
+      const mh = menu.offsetHeight;
+      const mw = menu.offsetWidth || 140;
+      const fitsBelow = r.bottom + 4 + mh <= window.innerHeight;
+      menu.style.top  = fitsBelow ? (r.bottom + 4) + 'px' : (r.top - mh - 4) + 'px';
+      menu.style.left = Math.max(4, r.right - mw) + 'px';
+    }
+  }
+}
+function closePrintDDs() {
+  document.querySelectorAll('.print-dd.open').forEach(d => d.classList.remove('open'));
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.print-dd')) closePrintDDs();
+});
+
+// ─── INVOICE HTML BUILDER ──────────────────────────────────────────────────
+function buildInvoiceHTML(invoiceId) {
+  const inv   = DB.invoices.find(x => x.id === invoiceId); if (!inv) return '';
   const cust  = DB.customers.find(x => x.id === inv.customerId);
   const wo    = DB.workorders.find(x => x.id === inv.workorderId);
   const vehId = (wo?.vehicleId) || inv.vehicleId;
@@ -39,7 +66,6 @@ function printInvoice(invoiceId) {
     </tr>`).join('') ||
     `<tr><td colspan="5" style="color:#999;font-style:italic;padding:4px 8px">— none —</td></tr>`;
 
-  // Build a self-contained page block used for both copies
   function buildPage(copyLabel, includeSig) {
     const sigHtml = includeSig
       ? `<div class="rp-sig-row" style="grid-template-columns:2fr 1fr 1fr;margin-top:10px">
@@ -122,16 +148,33 @@ function printInvoice(invoiceId) {
   </div>`;
   }
 
-  document.getElementById('receipt-print-area').innerHTML =
-    buildPage('Customer Copy', false) +
+  return buildPage('Customer Copy', false) +
     '<div class="rp-page-break"></div>' +
     buildPage('Shop Copy', true);
+}
 
+function printInvoice(invoiceId) {
+  const html = buildInvoiceHTML(invoiceId);
+  if (!html) return;
+  document.getElementById('receipt-print-area').innerHTML = html;
   window.print();
 }
 
-function printWorkorder(woId) {
-  const wo   = DB.workorders.find(x => x.id === woId); if (!wo) return;
+async function saveInvoicePDF(invoiceId) {
+  const inv = DB.invoices.find(x => x.id === invoiceId); if (!inv) return;
+  const cust = DB.customers.find(x => x.id === inv.customerId);
+  const html = buildInvoiceHTML(invoiceId);
+  if (!html) return;
+  document.getElementById('receipt-print-area').innerHTML = html;
+  const custName = cust ? (cust.last || cust.first) : 'Unknown';
+  const filename = `Invoice-${inv.number}-${custName}.pdf`.replace(/\s+/g, '_');
+  const result = await window.electronAPI.printToPDF(filename);
+  if (!result.ok && result.error) toast('PDF save failed: ' + result.error);
+}
+
+// ─── WORK ORDER HTML BUILDER ───────────────────────────────────────────────
+function buildWorkorderHTML(woId) {
+  const wo   = DB.workorders.find(x => x.id === woId); if (!wo) return '';
   const cust = DB.customers.find(x => x.id === wo.customerId);
   const veh  = DB.vehicles.find(x => x.id === wo.vehicleId);
   const shop = DB.settings;
@@ -142,7 +185,7 @@ function printWorkorder(woId) {
                     completed:'COMPLETED', estimate:'ESTIMATE' };
   const status = statusL[wo.status] || wo.status.toUpperCase();
 
-  document.getElementById('receipt-print-area').innerHTML = `
+  return `
   <div class="rp-header">
     <div class="rp-brand">
       <div class="rp-shop-name">${sName}</div>
@@ -243,7 +286,221 @@ function printWorkorder(woId) {
     <div style="text-align:center;flex:1;padding:0 10px">${footer}</div>
     <div>WO #${wo.number} · ${new Date().toLocaleDateString()}</div>
   </div>`;
+}
 
+function printWorkorder(woId) {
+  const html = buildWorkorderHTML(woId);
+  if (!html) return;
+  document.getElementById('receipt-print-area').innerHTML = html;
   window.print();
 }
 
+async function saveWorkorderPDF(woId) {
+  const wo = DB.workorders.find(x => x.id === woId); if (!wo) return;
+  const html = buildWorkorderHTML(woId);
+  if (!html) return;
+  document.getElementById('receipt-print-area').innerHTML = html;
+  const filename = `WorkOrder-${wo.number}.pdf`;
+  const result = await window.electronAPI.printToPDF(filename);
+  if (!result.ok && result.error) toast('PDF save failed: ' + result.error);
+}
+
+// ─── EXPENSES REPORT ────────────────────────────────────────────────────────
+function buildExpensesReportHTML() {
+  const shop   = DB.settings;
+  const sName  = shop.name || 'GEISTWERKS';
+  const sInfo  = [shop.address, shop.phone, shop.email].filter(Boolean).join('  ·  ');
+  const expenses = DB.expenses;
+
+  // Apply same filters as current view
+  const f = expenses.filter(e => {
+    const s = ((e.date||'')+' '+(e.vendor||'')+' '+(e.description||'')).toLowerCase();
+    return (!expFilter || s.includes(expFilter))
+        && (!expCF    || e.category === expCF)
+        && (!expYF    || (e.date||'').startsWith(expYF));
+  }).sort((a,b) => (a.date||'').localeCompare(b.date||''));
+
+  const total = f.reduce((s,e) => s+(e.amount||0), 0);
+  const filterNote = expYF ? ` — ${expYF}` : ' — All Time';
+
+  // Monthly totals
+  const byMonth = {};
+  f.forEach(e => {
+    const m = (e.date||'').slice(0,7);
+    if (m) byMonth[m] = (byMonth[m]||0)+(e.amount||0);
+  });
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const monthlyRows = Object.entries(byMonth).sort().map(([ym, amt]) => {
+    const [y,mo] = ym.split('-');
+    const label = `${monthNames[(parseInt(mo)||1)-1]} ${y}`;
+    return `<tr><td>${label}</td><td style="text-align:right">$${amt.toFixed(2)}</td></tr>`;
+  }).join('');
+
+  // Category totals
+  const byCat = {};
+  f.forEach(e => { byCat[e.category||'other'] = (byCat[e.category||'other']||0)+(e.amount||0); });
+  const CAT_LABELS = {supplies:'Supplies',tools:'Tools & Equip.',utilities:'Utilities',
+    insurance:'Insurance',rent:'Rent / Lease',other:'Other'};
+  const catRows = Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([cat,amt]) =>
+    `<tr><td>${CAT_LABELS[cat]||cat}</td><td style="text-align:right">$${amt.toFixed(2)}</td></tr>`
+  ).join('');
+
+  // Line items
+  const lineRows = f.map(e => `<tr>
+    <td class="mono">${e.date||'—'}</td>
+    <td>${escHtml(e.vendor||'—')}</td>
+    <td>${escHtml(e.description||'—')}</td>
+    <td style="font-size:9px">${(CAT_LABELS[e.category]||e.category||'—').toUpperCase()}</td>
+    <td style="text-align:right">$${(e.amount||0).toFixed(2)}</td>
+  </tr>`).join('');
+
+  return `
+  <div class="rp-header">
+    <div class="rp-brand">
+      <div class="rp-shop-name">${sName}</div>
+      ${sInfo ? `<div class="rp-shop-info">${sInfo}</div>` : ''}
+    </div>
+    <div class="rp-doc-id">
+      <div class="rp-doc-type">Expenses Report</div>
+      <div class="rp-doc-meta">${filterNote.trim()}</div>
+      <div class="rp-doc-meta">Generated ${new Date().toLocaleDateString()}</div>
+    </div>
+  </div>
+
+  <div class="rp-info-row two-col" style="margin-bottom:10px">
+    <div class="rp-info-col">
+      <div class="rp-section-label">By Month</div>
+      <table class="rp-table">
+        <thead><tr><th>Month</th><th style="text-align:right">Total</th></tr></thead>
+        <tbody>${monthlyRows || '<tr><td colspan="2" style="color:#999;font-style:italic">No data</td></tr>'}</tbody>
+      </table>
+    </div>
+    <div class="rp-info-col">
+      <div class="rp-section-label">By Category</div>
+      <table class="rp-table">
+        <thead><tr><th>Category</th><th style="text-align:right">Total</th></tr></thead>
+        <tbody>${catRows || '<tr><td colspan="2" style="color:#999;font-style:italic">No data</td></tr>'}</tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="rp-block-label">Expense Detail</div>
+  <table class="rp-table">
+    <thead><tr><th>Date</th><th>Vendor</th><th>Description</th><th>Category</th><th style="text-align:right">Amount</th></tr></thead>
+    <tbody>
+      ${lineRows || '<tr><td colspan="5" style="color:#999;font-style:italic;padding:4px 8px">No expenses.</td></tr>'}
+      <tr style="font-weight:600;border-top:2px solid #333">
+        <td colspan="4" style="font-family:\'Share Tech Mono\',monospace;font-size:10px;letter-spacing:1px">TOTAL${filterNote}</td>
+        <td style="text-align:right">$${total.toFixed(2)}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="rp-footer">
+    <div class="rp-footer-brand">${sName}</div>
+    <div style="text-align:center;flex:1;padding:0 10px">Expenses Report${filterNote}</div>
+    <div>${new Date().toLocaleDateString()}</div>
+  </div>`;
+}
+
+function printExpenses() {
+  document.getElementById('receipt-print-area').innerHTML = buildExpensesReportHTML();
+  window.print();
+}
+
+async function saveExpensesPDF() {
+  document.getElementById('receipt-print-area').innerHTML = buildExpensesReportHTML();
+  const label = expYF ? expYF : new Date().getFullYear().toString();
+  const filename = `Expenses-${label}.pdf`;
+  const result = await window.electronAPI.printToPDF(filename);
+  if (!result.ok && result.error) toast('PDF save failed: ' + result.error);
+}
+
+// ─── PER-MONTH EXPENSES REPORT ─────────────────────────────────────────────
+function buildMonthExpensesHTML(yearMonth) {
+  const shop  = DB.settings;
+  const sName = shop.name || 'GEISTWERKS';
+  const sInfo = [shop.address, shop.phone, shop.email].filter(Boolean).join('  ·  ');
+
+  const [y, mo] = yearMonth.split('-');
+  const MONTH_NAMES = ['January','February','March','April','May','June',
+                       'July','August','September','October','November','December'];
+  const monthLabel = `${MONTH_NAMES[(parseInt(mo)||1)-1]} ${y}`;
+
+  const f = DB.expenses
+    .filter(e => (e.date||'').startsWith(yearMonth))
+    .sort((a,b) => (a.date||'').localeCompare(b.date||''));
+
+  const total = f.reduce((s,e) => s+(e.amount||0), 0);
+
+  const CAT_LABELS = {supplies:'Supplies',tools:'Tools & Equip.',utilities:'Utilities',
+    insurance:'Insurance',rent:'Rent / Lease',other:'Other'};
+
+  const byCat = {};
+  f.forEach(e => { byCat[e.category||'other'] = (byCat[e.category||'other']||0)+(e.amount||0); });
+  const catRows = Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([cat,amt]) =>
+    `<tr><td>${CAT_LABELS[cat]||cat}</td><td style="text-align:right">$${amt.toFixed(2)}</td></tr>`
+  ).join('');
+
+  const lineRows = f.map(e => `<tr>
+    <td class="mono">${e.date||'—'}</td>
+    <td>${escHtml(e.vendor||'—')}</td>
+    <td>${escHtml(e.description||'—')}</td>
+    <td style="font-size:9px">${(CAT_LABELS[e.category]||e.category||'—').toUpperCase()}</td>
+    <td style="text-align:right">$${(e.amount||0).toFixed(2)}</td>
+  </tr>`).join('');
+
+  return `
+  <div class="rp-header">
+    <div class="rp-brand">
+      <div class="rp-shop-name">${sName}</div>
+      ${sInfo ? `<div class="rp-shop-info">${sInfo}</div>` : ''}
+    </div>
+    <div class="rp-doc-id">
+      <div class="rp-doc-type">Expenses Report</div>
+      <div class="rp-doc-meta">${monthLabel}</div>
+      <div class="rp-doc-meta">Generated ${new Date().toLocaleDateString()}</div>
+    </div>
+  </div>
+
+  <div class="rp-info-col" style="margin-bottom:10px">
+    <div class="rp-section-label">By Category — ${monthLabel}</div>
+    <table class="rp-table">
+      <thead><tr><th>Category</th><th style="text-align:right">Total</th></tr></thead>
+      <tbody>${catRows || '<tr><td colspan="2" style="color:#999;font-style:italic">No data</td></tr>'}</tbody>
+    </table>
+  </div>
+
+  <div class="rp-block-label">Expense Detail — ${monthLabel}</div>
+  <table class="rp-table">
+    <thead><tr><th>Date</th><th>Vendor</th><th>Description</th><th>Category</th><th style="text-align:right">Amount</th></tr></thead>
+    <tbody>
+      ${lineRows || '<tr><td colspan="5" style="color:#999;font-style:italic;padding:4px 8px">No expenses.</td></tr>'}
+      <tr style="font-weight:600;border-top:2px solid #333">
+        <td colspan="4" style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px">TOTAL — ${monthLabel}</td>
+        <td style="text-align:right">$${total.toFixed(2)}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="rp-footer">
+    <div class="rp-footer-brand">${sName}</div>
+    <div style="text-align:center;flex:1;padding:0 10px">Expenses — ${monthLabel}</div>
+    <div>${new Date().toLocaleDateString()}</div>
+  </div>`;
+}
+
+function printMonthExpenses(yearMonth) {
+  document.getElementById('receipt-print-area').innerHTML = buildMonthExpensesHTML(yearMonth);
+  window.print();
+}
+
+async function saveMonthExpensesPDF(yearMonth) {
+  document.getElementById('receipt-print-area').innerHTML = buildMonthExpensesHTML(yearMonth);
+  const [y, mo] = yearMonth.split('-');
+  const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const label = `${MONTH_NAMES[(parseInt(mo)||1)-1]}-${y}`;
+  const filename = `Expenses-${label}.pdf`;
+  const result = await window.electronAPI.printToPDF(filename);
+  if (!result.ok && result.error) toast('PDF save failed: ' + result.error);
+}

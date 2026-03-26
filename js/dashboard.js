@@ -377,7 +377,7 @@ function renderJobBoard() {
 }
 
 function renderDashboard() {
-  const customers=DB.customers, workorders=DB.workorders, invoices=DB.invoices;
+  const customers=DB.customers, workorders=DB.workorders, invoices=DB.invoices, expenses=DB.expenses;
   const now=new Date(), mm=now.getMonth(), yy=now.getFullYear();
   const openWO  = workorders.filter(w => ['open','inprogress','waiting'].includes(w.status)).length;
   const estimates = workorders.filter(w => w.status === 'estimate').length;
@@ -391,11 +391,16 @@ function renderDashboard() {
     const d = new Date(i.date || '');
     return d.getMonth() === mm && d.getFullYear() === yy;
   }).reduce((s, i) => s + (i.total || 0), 0);
+  const exp = expenses.filter(e => {
+    const d = new Date(e.date || '');
+    return d.getMonth() === mm && d.getFullYear() === yy;
+  }).reduce((s, e) => s + (e.amount || 0), 0);
 
   document.getElementById('stat-open-wo').textContent   = openWO;
   document.getElementById('stat-completed').textContent = done;
   document.getElementById('stat-customers').textContent = customers.length;
   document.getElementById('stat-revenue').textContent   = '$' + rev.toFixed(0);
+  document.getElementById('stat-expenses').textContent  = '$' + exp.toFixed(0);
 
   // Update sub-text on stat cards with more context
   const subOpen = document.querySelector('#stat-open-wo')?.closest('.stat-card')?.querySelector('.stat-sub');
@@ -403,5 +408,6 @@ function renderDashboard() {
 
   renderJobBoard();
   renderChart();
+  renderMiniCalendar();
 }
 

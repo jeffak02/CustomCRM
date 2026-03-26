@@ -1,14 +1,11 @@
-version: 1.0.1
+version: 1.3.8
 files:
-  - url: GeistWerks-1.0.1-arm64-mac.zip
-    sha512: DHxHw245TXUVzKhmOGxt6mFt/gu7viAaJoNVkx0iMTG/tD5zBWHJVadxCd6wVRuVabe2ALnVTgDz9T3cbo1mHg==
-    size: 95657834
-  - url: GeistWerks-1.0.1-mac.zip
-    sha512: z+2ypCgJaQVvLJk8le6eb/NM5mw6RN8R/+s8oVDW+sotgfpUdyktqbTAWZavMEPgS5xeFxVENDvJ1XbvVOzb7Q==
-    size: 100646387
-  - url: GeistWerks-1.0.1-arm64.dmg
-    sha512: payeCrv6OTdVOEYbwA8L+wSNm4e6FVILi8Z84ZJZln5NUSrCjogDrRAqDwObaxpXIAdoFc6bHN2p7i/TuMPtLg==
-    size: 99419589
-path: GeistWerks-1.0.1-arm64-mac.zip
-sha512: DHxHw245TXUVzKhmOGxt6mFt/gu7viAaJoNVkx0iMTG/tD5zBWHJVadxCd6wVRuVabe2ALnVTgDz9T3cbo1mHg==
-releaseDate: '2026-03-25T06:43:26.559Z'
+  - url: GeistWerks-1.3.8-arm64-mac.zip
+    sha512: UXydILsLJJOetwhoV/dQiIQHjicKtkoRvw+/UylTuoF/p/lk4rswiTCKmRZPQauCuTXR1/AtB+jQw5i8qcQEfg==
+    size: 95340782
+  - url: GeistWerks-1.3.8-mac.zip
+    sha512: yp+IiTuIlSXb183R6u7JVgZg5OcHHprskEU071I68MYSMklPvGIHGCRBmt5WxGnIIVlrhYl+AhxF9DjfZ07Fig==
+    size: 100329335
+path: GeistWerks-1.3.8-arm64-mac.zip
+sha512: UXydILsLJJOetwhoV/dQiIQHjicKtkoRvw+/UylTuoF/p/lk4rswiTCKmRZPQauCuTXR1/AtB+jQw5i8qcQEfg==
+releaseDate: '2026-03-26T20:25:26.745Z'

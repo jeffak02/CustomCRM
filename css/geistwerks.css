@@ -470,6 +470,23 @@
   .action-btn.del:hover   { color:var(--red);    border-color:rgba(204,30,30,0.5); }
   .action-btn.prnt:hover  { color:var(--hud);    border-color:var(--hud-dim); }
 
+  /* PRINT DROPDOWN */
+  .print-dd { position:relative; display:inline-block; }
+  .print-dd-menu {
+    display:none; position:fixed; z-index:9999;
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:6px; min-width:140px; box-shadow:0 4px 16px rgba(0,0,0,0.4);
+    overflow:hidden;
+  }
+  .print-dd.open .print-dd-menu { display:block; }
+  .print-dd-menu button {
+    display:block; width:100%; padding:8px 14px; background:none; border:none;
+    color:var(--text); font-size:12px; text-align:left; cursor:pointer;
+    border-bottom:1px solid var(--border);
+  }
+  .print-dd-menu button:last-child { border-bottom:none; }
+  .print-dd-menu button:hover { background:var(--surface3); color:var(--hud); }
+
   /* MODALS */
   .modal-overlay {
     display: none;
@@ -1321,14 +1338,14 @@
   }
   .job-actions { display: flex; gap: 4px; justify-content: flex-end; }
 
-  /* Revenue card — redacted until hover */
-  .stat-card-redact #stat-revenue {
+  /* Revenue/Expenses cards — redacted until hover */
+  .stat-card-redact .stat-value {
     filter: blur(8px);
     opacity: 0.3;
     transition: filter 0.3s ease, opacity 0.3s ease;
     user-select: none;
   }
-  .stat-card-redact:hover #stat-revenue {
+  .stat-card-redact:hover .stat-value {
     filter: blur(0);
     opacity: 1;
   }
@@ -1516,3 +1533,329 @@
     .form-grid  { grid-template-columns:1fr; }
     .dash-grid  { grid-column:1/-1; grid-template-columns:1fr; }
   }
+
+/* ── Dashboard flex + drag-and-drop widgets ────────────────── */
+#dash-widgets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+}
+.dash-widget {
+  flex: 1 1 100%;
+  position: relative;
+  box-sizing: border-box;
+}
+.dash-widget-stat {
+  flex: 1 1 160px;
+  min-width: 140px;
+}
+.dash-widget[data-size="full"]  { flex: 1 1 100%; }
+.dash-widget[data-size="half"]  { flex: 0 0 calc(50% - 6px); min-width: calc(50% - 6px); }
+.dash-widget[data-size="third"] { flex: 0 0 calc(33.33% - 8px); min-width: calc(33.33% - 8px); }
+
+.widget-grab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--text3);
+  font-family: 'Share Tech Mono', monospace;
+  cursor: default;
+  user-select: none;
+  opacity: 0.35;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+  text-transform: uppercase;
+}
+.widget-grab-spacer { flex: 1; }
+.widget-resize-btn {
+  display: none;
+  background: none;
+  border: 1px solid var(--hud-dim);
+  border-radius: 2px;
+  color: var(--hud-dim);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 1px;
+  padding: 1px 5px;
+  cursor: pointer;
+  text-transform: uppercase;
+  line-height: 1.4;
+  transition: color 0.1s, border-color 0.1s;
+}
+.widget-resize-btn:hover { color: var(--hud); border-color: var(--hud); }
+
+.dash-widget.widget-dragging {
+  opacity: 0.35;
+  transform: scale(0.98);
+}
+.dash-widget.widget-drag-over-top,
+.dash-widget.widget-drag-over-bot {
+  background: color-mix(in srgb, var(--hud) 4%, transparent);
+}
+.dash-widget.widget-drag-over-top::before {
+  content: '';
+  position: absolute;
+  top: -4px; left: 0; right: 0;
+  height: 3px;
+  background: var(--hud);
+  box-shadow: 0 0 12px var(--hud), 0 0 24px color-mix(in srgb, var(--hud) 40%, transparent);
+  border-radius: 2px;
+  z-index: 100;
+  pointer-events: none;
+}
+.dash-widget.widget-drag-over-bot::after {
+  content: '';
+  position: absolute;
+  bottom: -4px; left: 0; right: 0;
+  height: 3px;
+  background: var(--hud);
+  box-shadow: 0 0 12px var(--hud), 0 0 24px color-mix(in srgb, var(--hud) 40%, transparent);
+  border-radius: 2px;
+  z-index: 100;
+  pointer-events: none;
+}
+
+/* ── Dashboard Edit Mode ──────────────────────────────────── */
+#dash-widgets.dash-edit-mode .dash-widget {
+  border: 1px dashed color-mix(in srgb, var(--hud) 40%, transparent);
+  border-radius: 3px;
+  animation: widgetEditPulse 3s ease-in-out infinite;
+}
+#dash-widgets.dash-edit-mode .widget-grab {
+  opacity: 1;
+  color: var(--hud);
+  cursor: grab;
+  background: color-mix(in srgb, var(--hud) 6%, transparent);
+  border-bottom: 1px dashed color-mix(in srgb, var(--hud) 30%, transparent);
+  padding: 5px 8px;
+}
+#dash-widgets.dash-edit-mode .widget-grab:hover {
+  background: color-mix(in srgb, var(--hud) 12%, transparent);
+}
+#dash-widgets.dash-edit-mode .widget-resize-btn { display: inline-block; }
+@keyframes widgetEditPulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--hud) 0%, transparent); }
+  50%       { box-shadow: 0 0 10px 1px color-mix(in srgb, var(--hud) 15%, transparent); }
+}
+
+.dash-edit-btn {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  padding: 5px 12px;
+  border: 1px solid var(--hud-dim);
+  background: transparent;
+  color: var(--hud-dim);
+  font-family: 'Share Tech Mono', monospace;
+  border-radius: 2px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.dash-edit-btn:hover,
+.dash-edit-btn.active {
+  color: var(--hud);
+  border-color: var(--hud);
+  background: color-mix(in srgb, var(--hud) 8%, transparent);
+}
+
+/* ── Full calendar ───────────────────────────────────────── */
+.cal-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.cal-month-label {
+  font-size: 16px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text);
+  letter-spacing: 1px;
+  min-width: 200px;
+}
+.cal-nav-btn {
+  min-width: 36px;
+  text-align: center;
+  padding: 4px 10px;
+}
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.cal-day-header {
+  background: var(--surface2);
+  text-align: center;
+  padding: 7px 4px;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--text3);
+  font-family: 'Share Tech Mono', monospace;
+  text-transform: uppercase;
+}
+.cal-cell {
+  background: var(--surface2);
+  min-height: 130px;
+  padding: 6px 5px 4px;
+  cursor: pointer;
+  vertical-align: top;
+  transition: background 0.1s;
+}
+.cal-cell:hover { background: var(--surface3); }
+.cal-other-month { opacity: 0.28; cursor: default; }
+.cal-other-month:hover { background: var(--surface2); }
+.cal-today { background: rgba(57,255,20,0.04); outline: 1px solid rgba(57,255,20,0.18); }
+.cal-day-num {
+  display: block;
+  font-size: 11px;
+  color: var(--text3);
+  font-family: 'Share Tech Mono', monospace;
+  margin-bottom: 3px;
+  line-height: 1;
+}
+.cal-day-num.today { color: var(--hud); font-weight: 700; }
+.cal-event-bubble {
+  font-size: 9px;
+  padding: 2px 5px;
+  border-radius: 2px;
+  color: #000;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+  display: block;
+  font-family: 'Share Tech Mono', monospace;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.1s;
+}
+.cal-event-bubble:hover { opacity: 0.75; }
+.cal-event-more {
+  font-size: 9px;
+  color: var(--text3);
+  font-family: 'Share Tech Mono', monospace;
+  padding: 1px 0;
+}
+
+/* ── Mini calendar (dashboard widget) ───────────────────── */
+.mcal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  font-family: 'Share Tech Mono', monospace;
+  min-width: 238px;
+}
+.mcal-hdr {
+  text-align: center;
+  color: var(--text3);
+  padding: 2px 0 6px;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.mcal-cell {
+  text-align: center;
+  padding: 6px 2px 4px;
+  cursor: pointer;
+  border-radius: 4px;
+  color: var(--text2);
+  position: relative;
+  font-size: 11px;
+  line-height: 1.2;
+  transition: background 0.1s, color 0.1s;
+}
+.mcal-empty { cursor: default; }
+.mcal-cell:not(.mcal-empty):hover { background: var(--surface3); color: var(--text); }
+.mcal-today {
+  background: color-mix(in srgb, var(--hud) 14%, transparent) !important;
+  color: var(--hud) !important;
+  font-weight: 700;
+}
+.mcal-day-num { display: block; }
+.mcal-dots {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  margin-top: 3px;
+}
+.mcal-dot {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Apple Calendar sync toggle ──────────────────────────── */
+.apple-sync-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text3);
+  user-select: none;
+  transition: color 0.15s;
+}
+.apple-sync-label:hover { color: var(--text2); }
+.apple-sync-label input[type="checkbox"] { display: none; }
+.apple-sync-track {
+  display: inline-block;
+  width: 34px; height: 18px;
+  border: 1px solid var(--hud-dim);
+  border-radius: 9px;
+  background: var(--surface2);
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.2s, border-color 0.2s;
+}
+.apple-sync-track::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--text3);
+  transition: transform 0.2s, background 0.2s;
+}
+.apple-sync-label input:checked ~ .apple-sync-track {
+  background: color-mix(in srgb, var(--hud) 20%, transparent);
+  border-color: var(--hud);
+}
+.apple-sync-label input:checked ~ .apple-sync-track::after {
+  transform: translateX(16px);
+  background: var(--hud);
+}
+.apple-sync-label input:checked ~ span:last-child { color: var(--hud); }
+
+/* ── Dashboard calendar widget body ─────────────────────── */
+.mcal-body {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  padding: 16px;
+}
+.mcal-upcoming-wrap {
+  flex: 1;
+  min-width: 180px;
+}
+.mcal-upcoming-hdr {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--hud-dim);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--hud-dim);
+  margin-bottom: 2px;
+}

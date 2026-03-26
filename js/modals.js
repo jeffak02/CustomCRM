@@ -4,7 +4,7 @@ function showView(name) {
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
   document.getElementById('view-'+name).classList.add('active');
-  const labels={dashboard:'Dashboard',customers:'Customers',workorders:'Work Orders',vehicles:'Vehicles',invoices:'Invoices',settings:'Settings'};
+  const labels={dashboard:'Dashboard',customers:'Customers',workorders:'Work Orders',vehicles:'Vehicles',invoices:'Invoices',expenses:'Expenses',calendar:'Calendar',settings:'Settings'};
   document.querySelectorAll('nav button').forEach(b=>{ if(b.textContent.trim()===labels[name]) b.classList.add('active'); });
   if(name==='settings') loadSettings();
   renderAll();
@@ -15,15 +15,20 @@ function openModal(type, id=null) {
   editingId[type]=id;
   populateSelects();
   clearForm(type);
-  const titles={customer:'cust-modal-title',vehicle:'veh-modal-title',workorder:'wo-modal-title',invoice:'inv-modal-title'};
-  const addLabels={customer:'Add Customer',vehicle:'Add Vehicle',workorder:'New Work Order',invoice:'New Invoice'};
+  const titles={customer:'cust-modal-title',vehicle:'veh-modal-title',workorder:'wo-modal-title',invoice:'inv-modal-title',expense:'exp-modal-title',event:'ev-modal-title'};
+  const addLabels={customer:'Add Customer',vehicle:'Add Vehicle',workorder:'New Work Order',invoice:'New Invoice',expense:'Add Expense',event:'Add Event'};
   if(id) {
-    const item=DB[type+'s'].find(x=>x.id===id);
+    // 'event' maps to DB.calEvents, not DB.events
+    const item = type==='event'
+      ? (DB.calEvents||[]).find(x=>x.id===id)
+      : DB[type+'s'].find(x=>x.id===id);
     if(item) fillForm(type,item);
     document.getElementById(titles[type]).textContent='Edit '+type.charAt(0).toUpperCase()+type.slice(1);
   } else {
     document.getElementById(titles[type]).textContent=addLabels[type];
     const today=new Date().toISOString().split('T')[0];
+    if(type==='expense')   document.getElementById('exp-date').value=today;
+    if(type==='event')     document.getElementById('ev-date').value=today;
     if(type==='workorder') document.getElementById('wo-datein').value=today;
     if(type==='invoice'){
       document.getElementById('inv-date').value=today;
@@ -48,7 +53,7 @@ function openModal(type, id=null) {
 
 function openAddModal() {
   const active=document.querySelector('.view.active').id.replace('view-','');
-  const map={dashboard:'workorder',customers:'customer',workorders:'workorder',vehicles:'vehicle',invoices:'invoice',settings:'workorder'};
+  const map={dashboard:'workorder',customers:'customer',workorders:'workorder',vehicles:'vehicle',invoices:'invoice',expenses:'expense',calendar:'event',settings:'workorder'};
   openModal(map[active]||'workorder');
 }
 
@@ -66,7 +71,9 @@ function clearForm(type) {
     customer:['cust-first','cust-last','cust-phone','cust-email','cust-address','cust-notes'],
     vehicle: ['veh-year','veh-make','veh-model','veh-trim','veh-color','veh-plate','veh-vin','veh-mileage','veh-notes'],
     workorder:['wo-description','wo-cost','wo-datein','wo-datepromise','wo-notes','wo-tech','wo-mileage-in','wo-cust-phone'],
-    invoice: ['inv-total','inv-notes','inv-amount-paid']
+    invoice: ['inv-total','inv-notes','inv-amount-paid'],
+    expense: ['exp-date','exp-vendor','exp-description','exp-amount','exp-notes'],
+    event:   ['ev-title','ev-date','ev-start-time','ev-end-time','ev-notes']
   };
   (ids[type]||[]).forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   if(type==='workorder'){
@@ -77,6 +84,14 @@ function clearForm(type) {
     addWOPartRow(); addWOLaborRow();
   }
   if(type==='invoice')  { const s=document.getElementById('inv-status'); if(s) s.value='unpaid'; }
+  if(type==='expense')  { const c=document.getElementById('exp-category'); if(c) c.value='supplies'; }
+  if(type==='event')    {
+    const t=document.getElementById('ev-type');    if(t) t.value='event';
+    const col=document.getElementById('ev-color'); if(col) col.value='#39ff14';
+    const hex=document.getElementById('ev-color-hex'); if(hex) hex.textContent='#39ff14';
+    const ar=document.getElementById('ev-apple-row'); if(ar) ar.style.display='none';
+    const db=document.getElementById('ev-delete-btn'); if(db) db.style.display='none';
+  }
 }
 
 function fillForm(type,item) {
@@ -101,6 +116,29 @@ function fillForm(type,item) {
     set('wo-cost',item.cost); set('wo-datein',item.dateIn);
     set('wo-datepromise',item.datePromise); set('wo-notes',item.notes);
     renderWOLineItems(item);
+  } else if(type==='event'){
+    set('ev-title',item.title); set('ev-date',item.date);
+    set('ev-type',item.type||'event');
+    set('ev-start-time',item.startTime||''); set('ev-end-time',item.endTime||'');
+    const col=document.getElementById('ev-color');
+    if(col){ col.value=item.color||'#39ff14'; }
+    const hex=document.getElementById('ev-color-hex');
+    if(hex) hex.textContent=item.color||'#39ff14';
+    set('ev-notes',item.notes||'');
+    // Show apple sync status if previously synced
+    const ar=document.getElementById('ev-apple-row');
+    const sb=document.getElementById('ev-sync-btn');
+    const as=document.getElementById('ev-apple-status');
+    if(item.appleUid){
+      if(ar) ar.style.display='';
+      if(as) as.textContent='SYNCED ✓';
+      if(sb) sb.textContent='Re-Sync ↗';
+    }
+    const db=document.getElementById('ev-delete-btn'); if(db) db.style.display='';
+  } else if(type==='expense'){
+    set('exp-date',item.date); set('exp-vendor',item.vendor);
+    set('exp-description',item.description); set('exp-amount',item.amount);
+    set('exp-category',item.category||'supplies'); set('exp-notes',item.notes||'');
   } else if(type==='invoice'){
     set('inv-customer',item.customerId);
     set('inv-workorder',item.workorderId);

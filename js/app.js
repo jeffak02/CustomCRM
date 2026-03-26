@@ -39,18 +39,95 @@ if (_slider) { _slider.value = daysToSlider(activeChartRange); updateSliderLabel
   await DB.load();
   var s = DB.settings;
   applyColorScheme(s.hudColor || '#39ff14', s.accentColor || '#cc1e1e');
+  initDashboard();
   renderAll();
+  if (window.electronAPI && window.electronAPI.getVersion) {
+    var ver = await window.electronAPI.getVersion();
+    var el = document.getElementById('settings-version-num');
+    if (el) el.textContent = 'v' + ver;
+  }
 })();
 
 // ─── AUTO-UPDATER ──────────────────────────────────────
+var _updateInfo = null; // { version, url, downloadUrl }
+
 if (window.electronAPI && window.electronAPI.onUpdateStatus) {
-  window.electronAPI.onUpdateStatus(({ version, url }) => {
+  window.electronAPI.onUpdateStatus(function(info) {
+    _updateInfo = info;
     var btn = document.getElementById('update-btn');
     if (btn) {
-      btn.textContent = '\u2191 v'+version+' AVAILABLE';
+      btn.textContent = '\u2191 v'+info.version+' AVAILABLE';
       btn.style.display = '';
-      btn.onclick = () => window.electronAPI.openReleasePage(url);
+      btn.onclick = function() { openUpdateModal(); };
     }
-    toast('v'+version+' available \u2014 click to download');
+    toast('v'+info.version+' available \u2014 click to install');
   });
 }
+
+if (window.electronAPI && window.electronAPI.onDownloadProgress) {
+  window.electronAPI.onDownloadProgress(function(pct) {
+    var bar = document.getElementById('update-progress-bar');
+    var lbl = document.getElementById('update-progress-label');
+    if (bar) bar.style.width = pct + '%';
+    if (lbl) lbl.textContent = pct < 100 ? 'Downloading\u2026 ' + pct + '%' : 'Download complete \u2014 launching installer\u2026';
+  });
+}
+
+// ─── UPDATE MODAL ──────────────────────────────────────
+function openUpdateModal() {
+  if (!_updateInfo) return;
+  var msg = document.getElementById('update-modal-msg');
+  if (msg) msg.textContent = 'GeistWerks v'+_updateInfo.version+' is available. Click \u201cInstall Now\u201d to download and run the installer, then the app will close.';
+  // reset state
+  var wrap = document.getElementById('update-progress-wrap');
+  var bar  = document.getElementById('update-progress-bar');
+  var lbl  = document.getElementById('update-progress-label');
+  if (wrap) wrap.style.display = 'none';
+  if (bar)  bar.style.width = '0%';
+  if (lbl)  lbl.textContent = 'Downloading\u2026';
+  _setUpdateButtons(true);
+  document.getElementById('modal-update').classList.add('open');
+}
+
+function closeUpdateModal() {
+  document.getElementById('modal-update').classList.remove('open');
+}
+
+function _setUpdateButtons(enabled) {
+  var installBtn = document.getElementById('update-install-btn');
+  var laterBtn   = document.getElementById('update-later-btn');
+  var closeBtn   = document.getElementById('update-modal-close');
+  if (installBtn) { installBtn.disabled = !enabled; installBtn.textContent = enabled ? 'Install Now' : 'Downloading\u2026'; }
+  if (laterBtn)   laterBtn.disabled = !enabled;
+  if (closeBtn)   closeBtn.disabled = !enabled;
+}
+
+async function startUpdate() {
+  if (!_updateInfo) return;
+
+  // No direct download URL — fall back to opening the release page
+  if (!_updateInfo.downloadUrl) {
+    if (window.electronAPI) window.electronAPI.openReleasePage(_updateInfo.url);
+    closeUpdateModal();
+    return;
+  }
+
+  _setUpdateButtons(false);
+  var wrap = document.getElementById('update-progress-wrap');
+  if (wrap) wrap.style.display = 'block';
+
+  try {
+    var localPath = await window.electronAPI.downloadUpdate(_updateInfo.downloadUrl);
+    window.electronAPI.launchUpdate(localPath);
+    // App will quit — no need to re-enable buttons
+  } catch(e) {
+    toast('Download failed \u2014 check your connection', true);
+    _setUpdateButtons(true);
+    if (wrap) wrap.style.display = 'none';
+  }
+}
+
+// Attach modal button handlers after DOM is ready
+document.getElementById('update-install-btn').addEventListener('click', startUpdate);
+document.getElementById('update-later-btn').addEventListener('click', closeUpdateModal);
+document.getElementById('update-modal-close').addEventListener('click', closeUpdateModal);

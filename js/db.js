@@ -1,20 +1,24 @@
 'use strict';
 // All data lives in GeistWerks.app/Contents/Resources/data/geistwerks.json
 const DB = {
-  _data: { schemaVersion:0, customers:[], vehicles:[], workorders:[], invoices:[], settings:{} },
+  _data: { schemaVersion:0, customers:[], vehicles:[], workorders:[], invoices:[], expenses:[], calEvents:[], settings:{} },
   _dirty: false, _saveTimer: null,
 
-  get customers() { return this._data.customers; },
-  get vehicles()  { return this._data.vehicles; },
-  get workorders(){ return this._data.workorders; },
-  get invoices()  { return this._data.invoices; },
-  get settings()  { return this._data.settings; },
+  get customers()  { return this._data.customers; },
+  get vehicles()   { return this._data.vehicles; },
+  get workorders() { return this._data.workorders; },
+  get invoices()   { return this._data.invoices; },
+  get expenses()   { return this._data.expenses; },
+  get calEvents()  { return this._data.calEvents; },
+  get settings()   { return this._data.settings; },
 
-  set customers(v) { this._data.customers  = v; this._scheduleSave(); },
-  set vehicles(v)  { this._data.vehicles   = v; this._scheduleSave(); },
-  set workorders(v){ this._data.workorders  = v; this._scheduleSave(); },
-  set invoices(v)  { this._data.invoices    = v; this._scheduleSave(); },
-  set settings(v)  { this._data.settings    = v; this._scheduleSave(); },
+  set customers(v)  { this._data.customers  = v; this._scheduleSave(); },
+  set vehicles(v)   { this._data.vehicles   = v; this._scheduleSave(); },
+  set workorders(v) { this._data.workorders = v; this._scheduleSave(); },
+  set invoices(v)   { this._data.invoices   = v; this._scheduleSave(); },
+  set expenses(v)   { this._data.expenses   = v; this._scheduleSave(); },
+  set calEvents(v)  { this._data.calEvents  = v; this._scheduleSave(); },
+  set settings(v)   { this._data.settings   = v; this._scheduleSave(); },
 
   _scheduleSave() {
     this._dirty = true;
@@ -39,6 +43,8 @@ const DB = {
         this._data.vehicles   = d.vehicles   || [];
         this._data.workorders = d.workorders || [];
         this._data.invoices   = d.invoices   || [];
+        this._data.expenses   = d.expenses   || [];
+        this._data.calEvents  = d.calEvents  || [];
         this._data.settings   = d.settings   || {};
       }
     } catch(e) { console.warn('Load failed:', e); }
@@ -47,5 +53,9 @@ const DB = {
 
 function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 
-const editingId = { customer:null, vehicle:null, workorder:null, invoice:null };
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+const editingId = { customer:null, vehicle:null, workorder:null, invoice:null, expense:null, event:null };
 
