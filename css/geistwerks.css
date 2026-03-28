@@ -916,7 +916,7 @@
   @media print {
     body > * { display:none !important; }
     body::before { display:none !important; }
-    body { animation:none !important; opacity:1 !important; }
+    body { animation:none !important; opacity:1 !important; background:#fff !important; }
     #receipt-print-area { display:block !important; }
     @page { margin: 10mm 12mm; }
     .rp-page-break { page-break-before: always; break-before: page; }
